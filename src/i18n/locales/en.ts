@@ -64,6 +64,7 @@ export default {
 			diffMatchPatch: 'Smart merge (recommended)',
 			latestTimestamp: 'Use latest version',
 			skip: 'Skip conflicts',
+			diffMatchPatchOrSkip: 'Smart merge, skip if unresolvable',
 		},
 		confirmBeforeSync: {
 			name: 'Confirm before sync',

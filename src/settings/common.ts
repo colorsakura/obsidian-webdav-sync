@@ -84,6 +84,10 @@ export default class CommonSettings extends BaseSettings {
 						ConflictStrategy.Skip,
 						i18n.t('settings.conflictStrategy.skip'),
 					)
+					.addOption(
+						ConflictStrategy.DiffMatchPatchOrSkip,
+						i18n.t('settings.conflictStrategy.diffMatchPatchOrSkip'),
+					)
 					.setValue(this.plugin.settings.conflictStrategy)
 					.onChange(async (value: ConflictStrategy) => {
 						this.plugin.settings.conflictStrategy = value

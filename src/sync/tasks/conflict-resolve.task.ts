@@ -20,6 +20,7 @@ export enum ConflictStrategy {
 	DiffMatchPatch = 'diff-match-patch',
 	LatestTimeStamp = 'latest-timestamp',
 	Skip = 'skip',
+	DiffMatchPatchOrSkip = 'diff-match-patch-or-skip',
 }
 
 export default class ConflictResolveTask extends BaseTask {
@@ -70,6 +71,8 @@ export default class ConflictResolveTask extends BaseTask {
 					// Skip conflict resolution - keep files as they are
 					// Don't update record to preserve conflict state for next sync
 					return { success: true, skipRecord: true } as const
+				case ConflictStrategy.DiffMatchPatchOrSkip:
+					return await this.execIntelligentMergeOrSkip()
 			}
 		} catch (e) {
 			logger.error(this, e)
@@ -133,6 +136,84 @@ export default class ConflictResolveTask extends BaseTask {
 				case LatestTimestampResolution.NoChange:
 					noop()
 					break
+			}
+
+			return { success: true } as const
+		} catch (e) {
+			logger.error(this, e)
+			return { success: false, error: toTaskError(e, this) }
+		}
+	}
+
+	async execIntelligentMergeOrSkip() {
+		try {
+			const file = this.vault.getFileByPath(this.localPath)
+			if (!file) {
+				throw new Error('cannot find file in local fs: ' + this.localPath)
+			}
+			const localBuffer = await this.vault.readBinary(file)
+			const remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
+				format: 'binary',
+				details: false,
+			})) as BufferLike
+
+			if (isEqual(localBuffer, remoteBuffer)) {
+				return { success: true } as const
+			}
+
+			const { record } = this.options
+			let baseBlob: Blob | null = null
+			const baseKey = record?.base?.key
+			if (baseKey) {
+				baseBlob = await blobStore.get(baseKey)
+			}
+
+			const localIsMergeable = isMergeablePath(file.path)
+			const remoteIsMergeable = isMergeablePath(this.remotePath)
+
+			if (!(localIsMergeable && remoteIsMergeable)) {
+				throw new Error(i18n.t('sync.error.mergeNotSupported'))
+			}
+
+			const localText = await new Blob([new Uint8Array(localBuffer)]).text()
+			const remoteText = await new Blob([new Uint8Array(remoteBuffer)]).text()
+			const baseText = (await baseBlob?.text()) ?? localText
+
+			const mergeResult = await resolveByIntelligentMerge({
+				localContentText: localText,
+				remoteContentText: remoteText,
+				baseContentText: baseText,
+			})
+
+			if (!mergeResult.success) {
+				throw new Error(i18n.t('sync.error.failedToAutoMerge'))
+			}
+
+			if (mergeResult.isIdentical) {
+				return { success: true } as const
+			}
+
+			const mergedText = mergeResult.mergedText!
+
+			if (mergedText === remoteText) {
+				if (mergedText !== localText) {
+					await this.vault.modify(file, mergedText)
+				}
+				return { success: true } as const
+			}
+
+			const putResult = await this.webdav.putFileContents(
+				this.remotePath,
+				mergedText,
+				{ overwrite: true },
+			)
+
+			if (!putResult) {
+				throw new Error(i18n.t('sync.error.failedToUploadMerged'))
+			}
+
+			if (localText !== mergedText) {
+				await this.vault.modify(file, mergedText)
 			}
 
 			return { success: true } as const

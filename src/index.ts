@@ -12,13 +12,13 @@ import { SyncRibbonManager } from './components/SyncRibbonManager'
 import { emitCancelSync } from './events'
 import { emitSsoReceive } from './events/sso-receive'
 import i18n from './i18n'
-import ScheduledSyncService from './services/scheduled-sync.service'
 import CommandService from './services/command.service'
 import EventsService from './services/events.service'
 import I18nService from './services/i18n.service'
 import LoggerService from './services/logger.service'
 import { ProgressService } from './services/progress.service'
 import RealtimeSyncService from './services/realtime-sync.service'
+import ScheduledSyncService from './services/scheduled-sync.service'
 import { StatusService } from './services/status.service'
 import SyncExecutorService from './services/sync-executor.service'
 import { WebDAVService } from './services/webdav.service'
@@ -35,7 +35,7 @@ import { stdRemotePath } from './utils/std-remote-path'
 
 export default class NutstorePlugin extends Plugin {
 	public isSyncing: boolean = false
-	public settings: NutstoreSettings
+	public settings!: NutstoreSettings
 
 	public commandService = new CommandService(this)
 	public eventsService = new EventsService(this)
@@ -50,7 +50,10 @@ export default class NutstorePlugin extends Plugin {
 		this,
 		this.syncExecutorService,
 	)
-	public scheduledSyncService = new ScheduledSyncService(this, this.syncExecutorService)
+	public scheduledSyncService = new ScheduledSyncService(
+		this,
+		this.syncExecutorService,
+	)
 
 	async onload() {
 		await this.loadSettings()
@@ -154,7 +157,10 @@ export default class NutstorePlugin extends Plugin {
 	isAccountConfigured(): boolean {
 		if (this.settings.loginMode === 'sso') {
 			// SSO 模式：检查是否有 OAuth 响应数据
-			return !!this.settings.oauthResponseText && this.settings.oauthResponseText.trim() !== ''
+			return (
+				!!this.settings.oauthResponseText &&
+				this.settings.oauthResponseText.trim() !== ''
+			)
 		} else {
 			// 手动模式：检查账号和凭证是否都已填写
 			return (

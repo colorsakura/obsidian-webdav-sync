@@ -53,6 +53,7 @@ export default {
 			diffMatchPatch: '智能合并（推荐）',
 			latestTimestamp: '使用最新版本',
 			skip: '跳过冲突',
+			diffMatchPatchOrSkip: '智能合并，无法合并时跳过',
 		},
 		loginMode: {
 			name: '登录方式',
