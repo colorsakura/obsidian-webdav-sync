@@ -1,4 +1,4 @@
-import { normalizePath, TFile, TFolder, Vault } from 'obsidian'
+import { normalizePath, Vault } from 'obsidian'
 import { basename } from 'path-browserify'
 import { StatModel } from '~/model/stat.model'
 
@@ -7,25 +7,27 @@ export async function statVaultItem(
 	path: string,
 ): Promise<StatModel | undefined> {
 	path = normalizePath(path)
-	const file = vault.getAbstractFileByPath(path)
-	if (!file) {
+	const stat = await vault.adapter.stat(path)
+	if (!stat) {
 		return undefined
 	}
-	if (file instanceof TFolder) {
+	if (stat.type === 'folder') {
 		return {
 			path,
 			basename: basename(path),
 			isDir: true,
 			isDeleted: false,
+			mtime: stat.mtime,
 		}
-	} else if (file instanceof TFile) {
+	}
+	if (stat.type === 'file') {
 		return {
 			path,
 			basename: basename(path),
 			isDir: false,
 			isDeleted: false,
-			mtime: file.stat.mtime,
-			size: file.stat.size,
+			mtime: stat.mtime,
+			size: stat.size,
 		}
 	}
 }

@@ -18,7 +18,6 @@ export default class PullTask extends BaseTask {
 	}
 
 	async exec() {
-		const fileExists = await this.vault.getFileByPath(this.localPath)
 		try {
 			const file = (await this.webdav.getFileContents(this.remotePath, {
 				format: 'binary',
@@ -28,12 +27,8 @@ export default class PullTask extends BaseTask {
 			if (arrayBuffer.byteLength !== this.remoteSize) {
 				throw new Error('Remote Size Not Match!')
 			}
-			if (fileExists) {
-				await this.vault.modifyBinary(fileExists, arrayBuffer)
-			} else {
-				await mkdirsVault(this.vault, dirname(this.localPath))
-				await this.vault.createBinary(this.localPath, arrayBuffer)
-			}
+			await mkdirsVault(this.vault, dirname(this.localPath))
+			await this.vault.adapter.writeBinary(this.localPath, arrayBuffer)
 			return { success: true } as const
 		} catch (e) {
 			logger.error(this, e)

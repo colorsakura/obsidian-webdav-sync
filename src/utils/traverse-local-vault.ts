@@ -1,6 +1,4 @@
-import { isNil, partial } from 'lodash-es'
-import { normalizePath, TFolder, Vault } from 'obsidian'
-import { isNotNil } from 'ramda'
+import { normalizePath, Vault } from 'obsidian'
 import { StatModel } from '~/model/stat.model'
 import GlobMatch from './glob-match'
 import { statVaultItem } from './stat-vault-item'
@@ -22,25 +20,28 @@ export async function traverseLocalVault(vault: Vault, from: string) {
 	}
 
 	while (q.length > 0) {
-		const from = q.shift()
-		if (isNil(from)) {
+		const current = q.shift()
+		if (current === undefined) {
 			continue
 		}
-		const folder = vault.getAbstractFileByPath(normalizePath(from))
-		if (!folder || !(folder instanceof TFolder)) {
+		const folderPath = normalizePath(current)
+		const folderStat = await vault.adapter.stat(folderPath)
+		if (!folderStat || folderStat.type !== 'folder') {
 			continue
 		}
-		const files = folder.children
-			.filter((f) => !(f instanceof TFolder))
-			.map((f) => f.path)
-		let folders = folder.children
-			.filter((f) => f instanceof TFolder)
-			.map((f) => f.path)
-		folders = folders.filter(folderFilter)
-		q.push(...folders)
-		const contents = await Promise.all(
-			[...files, ...folders].map(partial(statVaultItem, vault)),
-		).then((arr) => arr.filter(isNotNil))
+		const { files, folders } = await vault.adapter.list(folderPath)
+		const normalizedFiles = files.map((path) => normalizePath(path))
+		const normalizedFolders = folders
+			.map((path) => normalizePath(path))
+			.filter(folderFilter)
+		q.push(...normalizedFolders)
+		const contents = (
+			await Promise.all(
+				[...normalizedFiles, ...normalizedFolders].map((path) =>
+					statVaultItem(vault, path),
+				),
+			)
+		).filter((item): item is StatModel => item !== undefined)
 		res.push(...contents)
 	}
 	return res

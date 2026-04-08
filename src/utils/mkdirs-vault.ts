@@ -1,4 +1,3 @@
-import { isNil } from 'lodash-es'
 import { Vault } from 'obsidian'
 import { dirname, normalize } from 'path-browserify'
 
@@ -8,14 +7,14 @@ export async function mkdirsVault(vault: Vault, path: string) {
 	if (currentPath === '/' || currentPath === '.') {
 		return
 	}
-	if (vault.getAbstractFileByPath(currentPath)) {
+	if (await vault.adapter.exists(currentPath)) {
 		return
 	}
 	while (
 		currentPath !== '' &&
 		currentPath !== '/' &&
 		currentPath !== '.' &&
-		isNil(vault.getAbstractFileByPath(currentPath))
+		!(await vault.adapter.exists(currentPath))
 	) {
 		stack.push(currentPath)
 		currentPath = dirname(currentPath)
@@ -25,6 +24,9 @@ export async function mkdirsVault(vault: Vault, path: string) {
 		if (!pop) {
 			continue
 		}
-		await vault.createFolder(pop)
+		if (await vault.adapter.exists(pop)) {
+			continue
+		}
+		await vault.adapter.mkdir(pop)
 	}
 }

@@ -111,13 +111,8 @@ export async function updateMtimeInRecord(
 				let base: { key: string } | undefined
 				let baseKey: string | undefined
 				if (!local.isDir) {
-					const file = vault.getFileByPath(localPath)
-					if (!file) {
-						return
-					}
-
-					const buffer = await vault.readBinary(file)
-					const isMergeable = isMergeablePath(file.path)
+					const buffer = await vault.adapter.readBinary(localPath)
+					const isMergeable = isMergeablePath(localPath)
 					if (!isMergeable) {
 						baseKey = undefined
 					} else {

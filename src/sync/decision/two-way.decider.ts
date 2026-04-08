@@ -70,9 +70,9 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 			filePath: string,
 			baseContent: ArrayBuffer,
 		): Promise<boolean> => {
-			const file = this.vault.getFileByPath(filePath)
-			if (!file) return false
-			const currentContent = await this.vault.readBinary(file)
+			const exists = await this.vault.adapter.exists(filePath)
+			if (!exists) return false
+			const currentContent = await this.vault.adapter.readBinary(filePath)
 			return isEqual(baseContent, currentContent)
 		}
 		const getBaseContent = async (key: string): Promise<ArrayBuffer | null> => {

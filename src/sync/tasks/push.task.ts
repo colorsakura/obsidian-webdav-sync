@@ -4,12 +4,12 @@ import { BaseTask, toTaskError } from './task.interface'
 export default class PushTask extends BaseTask {
 	async exec() {
 		try {
-			const file = this.vault.getFileByPath(this.localPath)
-			if (!file) {
+			const exists = await this.vault.adapter.exists(this.localPath)
+			if (!exists) {
 				throw new Error('cannot find file in local fs: ' + this.localPath)
 			}
 
-			const content = await this.vault.readBinary(file)
+			const content = await this.vault.adapter.readBinary(this.localPath)
 			const res = await this.webdav.putFileContents(this.remotePath, content, {
 				overwrite: true,
 			})
