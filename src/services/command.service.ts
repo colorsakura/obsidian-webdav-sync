@@ -11,6 +11,7 @@ export default class CommandService {
 		plugin.addCommand({
 			id: 'start-sync',
 			name: i18n.t('sync.startButton'),
+			icon: 'refresh-cw',
 			checkCallback: (checking) => {
 				if (plugin.isSyncing) {
 					return false
@@ -57,6 +58,7 @@ export default class CommandService {
 		plugin.addCommand({
 			id: 'stop-sync',
 			name: i18n.t('sync.stopButton'),
+			icon: 'x-circle',
 			checkCallback: (checking) => {
 				if (plugin.isSyncing) {
 					if (!checking) {
@@ -71,6 +73,7 @@ export default class CommandService {
 		plugin.addCommand({
 			id: 'show-sync-progress',
 			name: i18n.t('sync.showProgressButton'),
+			icon: 'activity',
 			callback: () => {
 				plugin.progressService.showProgressModal()
 			},
