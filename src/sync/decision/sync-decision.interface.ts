@@ -10,6 +10,7 @@ export interface SyncDecisionSettings {
 	conflictStrategy: ConflictStrategy
 	useGitStyle: boolean
 	syncMode: SyncMode
+	configDir: string
 }
 
 export interface SyncRecordItem {

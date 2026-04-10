@@ -39,6 +39,7 @@ export interface NutstoreSettings {
 	startupSyncDelaySeconds: number
 	autoSyncIntervalSeconds: number
 	language?: 'zh' | 'en'
+	configDirSyncMode?: 'none' | 'bookmarks' | 'all'
 }
 
 let pluginInstance: NutstorePlugin | null = null

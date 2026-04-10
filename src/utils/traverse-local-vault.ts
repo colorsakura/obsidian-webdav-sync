@@ -1,16 +1,15 @@
 import { normalizePath, Vault } from 'obsidian'
 import { StatModel } from '~/model/stat.model'
+import { getConfigDirSystemTraversalRules } from './config-dir-rules'
 import GlobMatch from './glob-match'
 import { statVaultItem } from './stat-vault-item'
 
 export async function traverseLocalVault(vault: Vault, from: string) {
 	const res: StatModel[] = []
 	const q = [from]
-	const ignores = [
-		new GlobMatch(`${vault.configDir}/plugins/*/node_modules`, {
-			caseSensitive: true,
-		}),
-	]
+	const ignores = getConfigDirSystemTraversalRules(vault.configDir).map(
+		(rule) => new GlobMatch(rule.expr, rule.options),
+	)
 	function folderFilter(path: string) {
 		path = normalizePath(path)
 		if (ignores.some((rule) => rule.test(path))) {

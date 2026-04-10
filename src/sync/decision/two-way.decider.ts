@@ -83,13 +83,13 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 			return await blob.arrayBuffer()
 		}
 
-		// 调用纯函数进行决策
 		return await twoWayDecider({
 			settings: {
 				skipLargeFiles: this.settings.skipLargeFiles,
 				conflictStrategy: this.settings.conflictStrategy,
 				useGitStyle: this.settings.useGitStyle,
 				syncMode: this.settings.syncMode,
+				configDir: this.vault.configDir,
 			},
 			localStats,
 			remoteStats,

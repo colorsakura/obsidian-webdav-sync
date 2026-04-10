@@ -15,6 +15,21 @@ import {
 import { hasFolderContentChanged } from './has-folder-content-changed'
 import { SyncDecisionInput } from './sync-decision.interface'
 
+/**
+ * Files under configDir (.obsidian) must not be text-merged — they are JSON,
+ * binary JS, or other non-markdown formats. Always use latest-timestamp for them.
+ */
+function pickConflictStrategy(
+	path: string,
+	configDir: string,
+	userStrategy: ConflictStrategy,
+): ConflictStrategy {
+	if (path === configDir || path.startsWith(configDir + '/')) {
+		return ConflictStrategy.LatestTimeStamp
+	}
+	return userStrategy
+}
+
 export async function twoWayDecider(
 	input: SyncDecisionInput,
 ): Promise<BaseTask[]> {
@@ -136,10 +151,11 @@ export async function twoWayDecider(
 									taskFactory.createConflictResolveTask({
 										...options,
 										record,
-										strategy:
-											settings.conflictStrategy === 'latest-timestamp'
-												? ConflictStrategy.LatestTimeStamp
-												: ConflictStrategy.DiffMatchPatch,
+										strategy: pickConflictStrategy(
+											p,
+											settings.configDir,
+											settings.conflictStrategy,
+										),
 										localStat: local,
 										remoteStat: remote,
 										useGitStyle: settings.useGitStyle,
@@ -351,7 +367,11 @@ export async function twoWayDecider(
 						tasks.push(
 							taskFactory.createConflictResolveTask({
 								...options,
-								strategy: ConflictStrategy.DiffMatchPatch,
+								strategy: pickConflictStrategy(
+									p,
+									settings.configDir,
+									settings.conflictStrategy,
+								),
 								localStat: local,
 								remoteStat: remote,
 								useGitStyle: settings.useGitStyle,

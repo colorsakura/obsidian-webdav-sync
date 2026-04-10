@@ -40,6 +40,7 @@ import { BaseTask, TaskError, TaskResult } from './tasks/task.interface'
 import { mergeMkdirTasks } from './utils/merge-mkdir-tasks'
 import { mergeRemoveRemoteTasks } from './utils/merge-remove-remote-tasks'
 import { updateMtimeInRecord as updateMtimeInRecordUtil } from './utils/update-records'
+import { computeEffectiveFilterRules } from '~/utils/config-dir-rules'
 
 export enum SyncStartMode {
 	MANUAL_SYNC = 'manual_sync',
@@ -63,13 +64,15 @@ export class NutstoreSync {
 		},
 	) {
 		this.options = Object.freeze(this.options)
-		this.remoteFs = new NutstoreFileSystem(this.options)
+		const filterRules = computeEffectiveFilterRules(plugin)
+		this.remoteFs = new NutstoreFileSystem({ ...this.options, filterRules })
 		this.localFS = new LocalVaultFileSystem({
 			vault: this.options.vault,
 			syncRecord: new SyncRecord(
 				getDBKey(this.vault.getName(), this.remoteBaseDir),
 				syncRecordKV,
 			),
+			filterRules,
 		})
 		this.subscriptions.push(
 			onCancelSync().subscribe(() => {

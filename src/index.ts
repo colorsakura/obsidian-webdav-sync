@@ -93,6 +93,24 @@ export default class NutstorePlugin extends Plugin {
 				},
 			} satisfies GlobMatchOptions
 		}
+		const exclusionRules = [
+			'**/.git',
+			'**/.github',
+			'**/.gitlab',
+			'**/.svn',
+			'**/node_modules',
+			'**/.DS_Store',
+			'**/__MACOSX',
+			'**/desktop.ini',
+			'**/Thumbs.db',
+			'**/.trash',
+			'**/~$*.doc',
+			'**/~$*.docx',
+			'**/~$*.ppt',
+			'**/~$*.pptx',
+			'**/~$*.xls',
+			'**/~$*.xlsx',
+		].map(createGlobMathOptions)
 		const DEFAULT_SETTINGS: NutstoreSettings = {
 			account: '',
 			credential: '',
@@ -106,12 +124,7 @@ export default class NutstorePlugin extends Plugin {
 			confirmBeforeDeleteInAutoSync: true,
 			syncMode: SyncMode.LOOSE,
 			filterRules: {
-				exclusionRules: [
-					'**/.git',
-					'**/.DS_Store',
-					'**/.trash',
-					this.app.vault.configDir,
-				].map(createGlobMathOptions),
+				exclusionRules,
 				inclusionRules: [],
 			},
 			skipLargeFiles: {
@@ -121,6 +134,7 @@ export default class NutstorePlugin extends Plugin {
 			startupSyncDelaySeconds: 0,
 			autoSyncIntervalSeconds: 300,
 			language: undefined,
+			configDirSyncMode: 'none',
 		}
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData())
