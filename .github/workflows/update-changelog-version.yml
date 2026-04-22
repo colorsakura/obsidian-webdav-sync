@@ -14,7 +14,7 @@ jobs:
       - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: main  # Explicitly checkout main branch
+          ref: main # Explicitly checkout main branch
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -31,31 +31,31 @@ jobs:
           echo "After removing refs/tags/: $VERSION"
           VERSION=${VERSION#v}
           echo "After removing v prefix: $VERSION"
-          
+
           echo "Current content before replacement:"
           cat CHANGELOG.md
-          
+
           # Only replace "Unreleased" in the heading, not in other places
           sed -i "s/## \[Unreleased\]/## [$VERSION]/" CHANGELOG.md
-          
+
           echo "Content after replacement:"
           cat CHANGELOG.md
-          
+
           # Check if there are changes
           if git diff --quiet CHANGELOG.md; then
             echo "No changes were made to CHANGELOG.md"
             exit 1
           fi
-          
+
           # Commit and push changes
           git add CHANGELOG.md
           git commit -m "docs: update changelog version to $VERSION [skip ci]"
           git push origin HEAD:main
-          
+
           # Update release description with CHANGELOG link
           CHANGELOG_URL="https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md#$VERSION"
           RELEASE_ID=$(jq --raw-output .release.id "$GITHUB_EVENT_PATH")
-          
+
           # Add CHANGELOG link to release description
           curl \
             -X PATCH \

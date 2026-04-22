@@ -64,7 +64,7 @@ jobs:
           RETRY_DELAY=5
           ATTEMPT=0
           SUCCESS=false
-          
+
           while [ $ATTEMPT -lt $MAX_RETRIES ] && [ "$SUCCESS" = "false" ]; do
             ATTEMPT=$((ATTEMPT+1))
             echo "Attempt $ATTEMPT of $MAX_RETRIES"
@@ -144,9 +144,8 @@ jobs:
             exit 1
           fi
         env:
-           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-           COMMIT_MESSAGES_RAW: ${{ steps.commit_messages.outputs.commits }}
-
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          COMMIT_MESSAGES_RAW: ${{ steps.commit_messages.outputs.commits }}
 
       - name: Update CHANGELOG.md
         # Only run if AI generated text
@@ -193,7 +192,6 @@ jobs:
           fi
 
           echo "CHANGELOG.md updated."
-
 
       - name: Commit and Push CHANGELOG.md
         # Only run if AI generated text
