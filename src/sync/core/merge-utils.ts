@@ -2,6 +2,7 @@ import { diff_match_patch } from 'diff-match-patch'
 import { isEqual } from 'lodash-es'
 import { diff3Merge as nodeDiff3Merge } from 'node-diff3'
 import { BufferLike } from 'webdav'
+import { isSameTime } from '~/utils/is-same-time'
 
 // --- Logic for Latest Timestamp Resolution ---
 
@@ -28,7 +29,7 @@ export function resolveByLatestTimestamp(
 ): LatestTimestampResult {
 	const { localMtime, remoteMtime, localContent, remoteContent } = params
 
-	if (remoteMtime === localMtime) {
+	if (isSameTime(remoteMtime, localMtime)) {
 		return { status: LatestTimestampResolution.NoChange }
 	}
 

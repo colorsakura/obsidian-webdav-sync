@@ -62,7 +62,8 @@ export async function getDirectoryContents(
 	if (!path.startsWith('/')) {
 		path = '/' + path
 	}
-	let currentUrl = `${endpoint}${path}`
+	// 避免 endpoint 末尾与 path 开头都是 / 时出现双斜杠
+	let currentUrl = endpoint.replace(/\/+$/, '') + path
 
 	while (true) {
 		try {

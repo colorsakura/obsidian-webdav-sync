@@ -11,6 +11,7 @@ import { isMergeablePath } from '~/sync/utils/is-mergeable-path'
 import { getDBKey } from '~/utils/get-db-key'
 import { isSub } from '~/utils/is-sub'
 import logger from '~/utils/logger'
+import { sha256Hex } from '~/utils/sha256'
 import { statVaultItem } from '~/utils/stat-vault-item'
 import { stdRemotePath } from '~/utils/std-remote-path'
 import type NutstorePlugin from '../..'
@@ -118,7 +119,7 @@ export async function updateMtimeInRecord(
 					const buffer = await vault.adapter.readBinary(localPath)
 					const isMergeable = isMergeablePath(localPath)
 					if (!isMergeable) {
-						baseKey = undefined
+						baseKey = await sha256Hex(buffer)
 					} else {
 						const { key } = await blobStore.store(buffer)
 						baseKey = key

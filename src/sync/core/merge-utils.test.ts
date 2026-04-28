@@ -47,7 +47,7 @@ describe('resolveByLatestTimestamp', () => {
 	it('情况 2.1: 远程较新且内容不同，应使用远程版本', () => {
 		const params: LatestTimestampParams = {
 			localMtime: 1000,
-			remoteMtime: 1001,
+			remoteMtime: 4000,
 			localContent: Buffer.from('abc'),
 			remoteContent: Buffer.from('abcd'),
 		}
@@ -61,7 +61,7 @@ describe('resolveByLatestTimestamp', () => {
 	it('情况 2.2: 远程较新，Buffer 内容不同，应使用远程版本', () => {
 		const params: LatestTimestampParams = {
 			localMtime: 1000,
-			remoteMtime: 1001,
+			remoteMtime: 4000,
 			localContent: Buffer.from('binarydata1'),
 			remoteContent: Buffer.from('binarydata2'),
 		}
@@ -75,7 +75,7 @@ describe('resolveByLatestTimestamp', () => {
 	// --- 使用本地版本 ---
 	it('情况 3.1: 本地较新且内容不同，应使用本地版本', () => {
 		const params: LatestTimestampParams = {
-			localMtime: 1001,
+			localMtime: 4000,
 			remoteMtime: 1000,
 			localContent: Buffer.from('xyz'),
 			remoteContent: Buffer.from('xy'),
@@ -89,7 +89,7 @@ describe('resolveByLatestTimestamp', () => {
 
 	it('情况 3.2: 本地较新，Buffer 内容不同，应使用本地版本', () => {
 		const params: LatestTimestampParams = {
-			localMtime: 1001,
+			localMtime: 4000,
 			remoteMtime: 1000,
 			localContent: Buffer.from('localbinary'),
 			remoteContent: Buffer.from('remotebinary'),

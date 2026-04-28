@@ -6,6 +6,7 @@ import { StatModel } from '~/model/stat.model'
 import { SyncRecordModel } from '~/model/sync-record.model'
 import { blobStore } from '~/storage/blob'
 import { isMergeablePath } from '~/sync/utils/is-mergeable-path'
+import { isSameTime } from '~/utils/is-same-time'
 import logger from '~/utils/logger'
 import { mergeDigIn } from '~/utils/merge-dig-in'
 import { statVaultItem } from '~/utils/stat-vault-item'
@@ -91,7 +92,7 @@ export default class ConflictResolveTask extends BaseTask {
 			const localMtime = local.mtime!
 			const remoteMtime = remote.mtime!
 
-			if (remoteMtime === localMtime) {
+			if (isSameTime(remoteMtime, localMtime)) {
 				return { success: true } as const
 			}
 

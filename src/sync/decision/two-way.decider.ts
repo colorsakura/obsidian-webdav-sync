@@ -1,6 +1,7 @@
 import { isEqual } from 'ohash'
 import { blobStore } from '~/storage/blob'
 import { SyncRecord } from '~/storage/sync-record'
+import { sha256Hex } from '~/utils/sha256'
 import CleanRecordTask from '../tasks/clean-record.task'
 import ConflictResolveTask from '../tasks/conflict-resolve.task'
 import FilenameErrorTask from '../tasks/filename-error.task'
@@ -85,6 +86,16 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 			const currentContent = await this.vault.adapter.readBinary(filePath)
 			return isEqual(baseContent, currentContent)
 		}
+		const compareFileHash = async (
+			filePath: string,
+			expectedHash: string,
+		): Promise<boolean> => {
+			const exists = await this.vault.adapter.exists(filePath)
+			if (!exists) return false
+			const currentContent = await this.vault.adapter.readBinary(filePath)
+			const currentHash = await sha256Hex(currentContent)
+			return currentHash === expectedHash
+		}
 		const getBaseContent = async (key: string): Promise<ArrayBuffer | null> => {
 			const blob = await blobStore.get(key)
 			if (!blob) {
@@ -108,6 +119,7 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 			remoteBaseDir: this.remoteBaseDir,
 			getBaseContent,
 			compareFileContent,
+			compareFileHash,
 			taskFactory,
 		})
 	}

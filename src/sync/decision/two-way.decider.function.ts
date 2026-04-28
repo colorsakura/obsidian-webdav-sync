@@ -42,6 +42,7 @@ export async function twoWayDecider(
 		remoteBaseDir,
 		getBaseContent,
 		compareFileContent,
+		compareFileHash,
 		taskFactory,
 	} = input
 
@@ -115,6 +116,12 @@ export async function twoWayDecider(
 							localChanged = !(await compareFileContent(
 								local.path,
 								baseContent,
+							))
+						} else {
+							// 不可合并文件：base.key 是 SHA-256 哈希值
+							localChanged = !(await compareFileHash(
+								local.path,
+								record.base.key,
 							))
 						}
 					}
