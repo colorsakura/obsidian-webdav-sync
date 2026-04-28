@@ -1,2 +1,4 @@
 packages:
   - packages/*
+patchedDependencies:
+  webdav@5.9.0: patches/webdav@5.9.0.patch

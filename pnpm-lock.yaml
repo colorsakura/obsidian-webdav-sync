@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  webdav@5.9.0:
+    hash: 73251c16941cecc487260354a5f287543a829e7aba127b81aadc0d193f91b776
+    path: patches/webdav@5.9.0.patch
+
 importers:
 
   .:
@@ -14,9 +19,6 @@ importers:
       '@electron/remote':
         specifier: ^2.1.2
         version: 2.1.3(electron@41.3.0)
-      '@nutstore/sso-js':
-        specifier: ^0.0.8
-        version: 0.0.8
       '@swc/cli':
         specifier: ^0.7.9
         version: 0.7.10(@swc/core@1.15.32(@swc/helpers@0.5.21))(chokidar@4.0.3)
@@ -175,7 +177,7 @@ importers:
         version: 3.2.4(@types/node@16.18.126)(jiti@2.6.1)(sass-embedded@1.99.0)(sass@1.99.0)
       webdav:
         specifier: ^5.7.1
-        version: 5.9.0
+        version: 5.9.0(patch_hash=73251c16941cecc487260354a5f287543a829e7aba127b81aadc0d193f91b776)
       webdav-explorer:
         specifier: 'workspace: *'
         version: link:packages/webdav-explorer
@@ -967,9 +969,6 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
-
-  '@nutstore/sso-js@0.0.8':
-    resolution: {integrity: sha512-mby3hzfVuE0Ch/nbe/PsvoR5h4bHHHSHTOycDDOLGrbFqO1mTn7L5LcvaPHskjBHxCeN2Y3PotOZOJiy5eRZmQ==}
 
   '@parcel/watcher-android-arm64@2.5.6':
     resolution: {integrity: sha512-YQxSS34tPF/6ZG7r/Ih9xy+kP/WwediEUsqmtf0cuCV5TPPKw/PQHRhueUo6JdeFJaqV3pyjm0GdYjZotbRt/A==}
@@ -4753,8 +4752,6 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
-  '@nutstore/sso-js@0.0.8': {}
-
   '@parcel/watcher-android-arm64@2.5.6':
     optional: true
 
@@ -8093,7 +8090,7 @@ snapshots:
 
   web-streams-polyfill@3.3.3: {}
 
-  webdav@5.9.0:
+  webdav@5.9.0(patch_hash=73251c16941cecc487260354a5f287543a829e7aba127b81aadc0d193f91b776):
     dependencies:
       '@buttercup/fetch': 0.2.1
       base-64: 1.0.0
