@@ -122,6 +122,11 @@ export async function getDirectoryContents(
 				await sleep(60_000)
 				continue
 			}
+			// jianguoyun returns 409 AncestorsNotFound when the directory
+			// (or its ancestors) does not exist. Treat as empty directory.
+			if (e instanceof Error && e.message.startsWith('409')) {
+				return []
+			}
 			throw e
 		}
 	}
