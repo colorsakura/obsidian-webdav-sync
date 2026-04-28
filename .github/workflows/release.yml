@@ -22,10 +22,10 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@nutstore'
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: latest
+          bun-version: latest
 
       - name: Build plugin
         env:
@@ -35,8 +35,8 @@ jobs:
           NODE_ENV: production
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pnpm install
-          pnpm run build
+          bun install
+          bun run build
 
       - name: Package plugin
         run: |

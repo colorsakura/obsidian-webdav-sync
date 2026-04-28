@@ -3,13 +3,13 @@
   "version": "2.0.0",
   "main": "main.js",
   "scripts": {
-    "dev": "run-p dev:*",
-    "dev:plugin": "node esbuild.config.mjs",
-    "dev:webdav-explorer": "pnpm --filter webdav-explorer dev",
-    "build": "run-s build:webdav-explorer build:plugin",
-    "build:webdav-explorer": "pnpm --filter webdav-explorer build",
-    "build:plugin": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production && swc ./dist/main.js -o main.js",
-    "version": "node version-bump.mjs && git add manifest.json versions.json",
+    "dev": "bun run dev:plugin & bun run dev:webdav-explorer & wait",
+    "dev:plugin": "bun esbuild.config.mjs",
+    "dev:webdav-explorer": "bun run --filter webdav-explorer dev",
+    "build": "bun run build:webdav-explorer && bun run build:plugin",
+    "build:webdav-explorer": "bun run --filter webdav-explorer build",
+    "build:plugin": "tsc -noEmit -skipLibCheck && bun esbuild.config.mjs production && swc ./dist/main.js -o main.js",
+    "version": "bun version-bump.mjs && git add manifest.json versions.json",
     "test": "vitest"
   },
   "devDependencies": {
@@ -52,7 +52,6 @@
     "localforage": "^1.10.0",
     "lodash-es": "^4.17.21",
     "node-diff3": "^3.1.2",
-    "npm-run-all2": "^7.0.2",
     "obsidian": "latest",
     "ohash": "^1.1.4",
     "path-browserify": "^1.0.1",
