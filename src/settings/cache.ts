@@ -96,7 +96,7 @@ export default class CacheSettings extends BaseSettings {
 								}
 							} catch (error) {
 								logger.error('Error clearing cache:', error)
-								new Notice(`Error clearing cache: ${error.message}`)
+								new Notice(`Error clearing cache: ${(error as Error).message}`)
 							}
 						}).open()
 					})

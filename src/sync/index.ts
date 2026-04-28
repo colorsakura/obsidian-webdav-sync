@@ -122,7 +122,7 @@ export class NutstoreSync {
 					})
 					break
 				} catch (e) {
-					if (is503Error(e)) {
+					if (is503Error(e as any)) {
 						await this.handle503Error(60000)
 						if (this.isCancelled) {
 							emitSyncError(new Error(i18n.t('sync.cancelled')))
@@ -455,7 +455,7 @@ export class NutstoreSync {
 
 			emitEndSync({ failedCount, showNotice })
 		} catch (error) {
-			emitSyncError(error)
+			emitSyncError(error as Error)
 			logger.error('Sync error:', error)
 		} finally {
 			this.subscriptions.forEach((sub) => sub.unsubscribe())
@@ -566,7 +566,7 @@ export class NutstoreSync {
 		const startAt = now + waitMs
 		new Notice(
 			i18n.t('sync.requestsTooFrequent', {
-				time: moment(startAt).format('HH:mm:ss'),
+				time: (moment as any)(startAt).format('HH:mm:ss'),
 			}),
 		)
 		await breakableSleep(onCancelSync(), startAt - now)

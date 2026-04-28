@@ -6,7 +6,7 @@ import logger from '~/utils/logger'
 import type NutstorePlugin from '..'
 
 export default class CacheRestoreModal extends Modal {
-	private fileList: HTMLElement
+	private fileList!: HTMLElement
 	private files: StatModel[] = []
 	private cacheService: CacheService
 
@@ -120,7 +120,7 @@ export default class CacheRestoreModal extends Modal {
 			this.fileList.empty()
 			this.fileList.createEl('p', {
 				text: i18n.t('settings.cache.restoreModal.loadError', {
-					message: error.message,
+					message: (error as Error).message,
 				}),
 				cls: 'p-12px text-center text-[var(--text-error)]',
 			})

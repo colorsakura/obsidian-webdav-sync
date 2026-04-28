@@ -137,8 +137,8 @@ export async function updateMtimeInRecord(
 				logger.error(
 					'updateMtimeInRecord',
 					{
-						errorName: e.name,
-						errorMsg: e.message,
+						errorName: (e as Error).name,
+						errorMsg: (e as Error).message,
 					},
 					task.toJSON(),
 				)

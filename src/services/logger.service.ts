@@ -11,7 +11,7 @@ export default class LoggerService {
 			logger.addReporter({
 				log: (logObj) => {
 					const log = [
-						moment(logObj.date).format('YYYY-MM-DD HH:mm:ss'),
+						(moment as any)(logObj.date).format('YYYY-MM-DD HH:mm:ss'),
 						logObj.type,
 						logObj.args,
 					]

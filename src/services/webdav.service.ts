@@ -19,7 +19,7 @@ export class WebDAVService {
 			return { success: await client.exists('/') }
 		} catch (error) {
 			return {
-				error,
+				error: error as Error,
 				success: false,
 			}
 		}

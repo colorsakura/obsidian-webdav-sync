@@ -26,7 +26,7 @@ export default class CacheSaveModal extends Modal {
 			cls: 'setting-item-description',
 		})
 
-		const defaultFilename = `${this.plugin.app.vault.getName()}.${moment().format('YYYY-MM-DD HH_mm_ss')}.SyncCache`
+		const defaultFilename = `${this.plugin.app.vault.getName()}.${(moment as any)().format('YYYY-MM-DD HH_mm_ss')}.SyncCache`
 
 		const inputContainer = contentEl.createDiv()
 		const filenameInput = inputContainer.createEl('input', {

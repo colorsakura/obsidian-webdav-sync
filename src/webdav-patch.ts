@@ -33,8 +33,9 @@ function onlyAscii(str: string) {
 if (VALID_REQURL) {
 	getPatcher().patch(
 		'request',
-		async (options: RequestOptionsWithState): Promise<Response> => {
-			const transformedHeaders = objKeyToLower({ ...options.headers })
+		async (options: unknown): Promise<Response> => {
+			const opts = options as RequestOptionsWithState
+			const transformedHeaders = objKeyToLower({ ...opts.headers })
 			delete transformedHeaders['host']
 			delete transformedHeaders['content-length']
 
@@ -47,9 +48,9 @@ if (VALID_REQURL) {
 			}
 
 			const p: RequestUrlParam = {
-				url: options.url,
-				method: options.method,
-				body: options.data as string | ArrayBuffer,
+				url: opts.url,
+				method: opts.method,
+				body: opts.data as string | ArrayBuffer,
 				headers: transformedHeaders,
 				contentType: reqContentType,
 				throw: false,
@@ -60,11 +61,11 @@ if (VALID_REQURL) {
 			if (
 				r.status === 401 &&
 				Platform.isIosApp &&
-				!options.url.endsWith('/') &&
-				!options.url.endsWith('.md') &&
-				options.method.toUpperCase() === 'PROPFIND'
+				!opts.url.endsWith('/') &&
+				!opts.url.endsWith('.md') &&
+				opts.method.toUpperCase() === 'PROPFIND'
 			) {
-				p.url = `${options.url}/`
+				p.url = `${opts.url}/`
 				r = await requestUrl(p)
 			}
 			const rspHeaders = objKeyToLower({ ...r.headers })

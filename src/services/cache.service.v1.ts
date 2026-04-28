@@ -68,7 +68,7 @@ export default class CacheServiceV1 {
 			logger.error('Error saving cache:', error)
 			new Notice(
 				i18n.t('settings.cache.saveModal.error', {
-					message: error.message,
+					message: (error as Error).message,
 				}),
 			)
 			return Promise.reject(error)
@@ -132,7 +132,7 @@ export default class CacheServiceV1 {
 			logger.error('Error restoring cache:', error)
 			new Notice(
 				i18n.t('settings.cache.restoreModal.error', {
-					message: error.message,
+					message: (error as Error).message,
 				}),
 			)
 			return Promise.reject(error)
@@ -155,7 +155,7 @@ export default class CacheServiceV1 {
 			logger.error('Error deleting cache file:', error)
 			new Notice(
 				i18n.t('settings.cache.restoreModal.deleteError', {
-					message: error.message,
+					message: (error as Error).message,
 				}),
 			)
 			return Promise.reject(error)

@@ -1,6 +1,6 @@
 import { sha256 } from 'hash-wasm'
 import { normalizePath } from 'obsidian'
-import { objectHash } from 'ohash'
+import { hash as objectHash } from 'ohash'
 import { stdRemotePath } from './std-remote-path'
 
 export function getDBKey(vaultName: string, remoteBaseDir: string) {
