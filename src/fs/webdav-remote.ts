@@ -2,7 +2,6 @@ import { Vault } from 'obsidian'
 import { isAbsolute } from 'path-browserify'
 import { isNotNil } from 'ramda'
 import { createClient, WebDAVClient } from 'webdav'
-import { NS_DAV_ENDPOINT } from '~/consts'
 import { useSettings } from '~/settings'
 import {
 	ConfigDirSyncMode,
@@ -20,7 +19,7 @@ import { ResumableWebDAVTraversal } from '~/utils/traverse-webdav'
 import AbstractFileSystem from './fs.interface'
 import completeLossDir from './utils/complete-loss-dir'
 
-export class NutstoreFileSystem implements AbstractFileSystem {
+export class WebDAVRemoteFileSystem implements AbstractFileSystem {
 	private webdav: WebDAVClient
 
 	constructor(
@@ -28,6 +27,7 @@ export class NutstoreFileSystem implements AbstractFileSystem {
 			vault: Vault
 			token: string
 			remoteBaseDir: string
+			endpoint: string
 			filterRules?: {
 				exclusionRules: GlobMatchOptions[]
 				inclusionRules: GlobMatchOptions[]
@@ -36,7 +36,7 @@ export class NutstoreFileSystem implements AbstractFileSystem {
 			}
 		},
 	) {
-		this.webdav = createClient(NS_DAV_ENDPOINT, {
+		this.webdav = createClient(options.endpoint, {
 			headers: {
 				Authorization: `Basic ${this.options.token}`,
 			},
@@ -52,6 +52,7 @@ export class NutstoreFileSystem implements AbstractFileSystem {
 				this.options.remoteBaseDir,
 			),
 			saveInterval: 1,
+			endpoint: this.options.endpoint,
 		})
 		let stats = await traversal.traverse()
 
@@ -84,13 +85,10 @@ export class NutstoreFileSystem implements AbstractFileSystem {
 			}
 		}
 
-		const settings = this.options.filterRules ? undefined : await useSettings()
-		const filterRules = this.options.filterRules ?? settings?.filterRules
+		const filterRules = this.options.filterRules
 		const configDir = this.options.filterRules?.configDir ?? this.options.vault.configDir
 		const configDirSyncMode =
-			this.options.filterRules?.configDirSyncMode ??
-			settings?.configDirSyncMode ??
-			'none'
+			this.options.filterRules?.configDirSyncMode ?? 'none'
 		const exclusions = this.buildRules(filterRules?.exclusionRules)
 		const inclusions = this.buildRules(filterRules?.inclusionRules)
 

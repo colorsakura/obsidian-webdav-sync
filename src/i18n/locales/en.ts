@@ -9,15 +9,20 @@ export default {
 			desc: 'Select interface language',
 			auto: 'Auto detect',
 		},
-		account: {
-			name: 'Account',
-			desc: 'Enter your WebDAV account',
-			placeholder: 'Enter your account',
+		webdavEndpoint: {
+			name: 'WebDAV endpoint',
+			desc: 'Enter the WebDAV server URL',
+			placeholder: 'https://example.com/remote.php/dav/files/user/',
 		},
-		credential: {
-			name: 'Credential',
-			desc: 'Enter your WebDAV credential',
-			placeholder: 'Enter your credential',
+		webdavUsername: {
+			name: 'Username',
+			desc: 'Enter your WebDAV username',
+			placeholder: 'Enter your username',
+		},
+		webdavPassword: {
+			name: 'Password',
+			desc: 'Enter your WebDAV password',
+			placeholder: 'Enter your password',
 		},
 		checkConnection: {
 			name: 'Check connection',
@@ -179,14 +184,14 @@ export default {
 			dump: 'Export',
 			dumpName: 'Cache management',
 			dumpDesc:
-				'The plugin stores remote folder information locally. When switching devices, this data is lost and must be rebuilt before syncing. With many files, rebuilding can be slow due to rate limits. Export saves this data to Nutstore; Import retrieves it, allowing immediate syncing on new devices.',
+				'The plugin stores remote folder information locally. When switching devices, this data is lost and must be rebuilt before syncing. With many files, rebuilding can be slow due to rate limits. Export saves this data to the remote server; Import retrieves it, allowing immediate syncing on new devices.',
 			restoreName: 'Import cache',
 			restoreDesc:
-				'Import previously exported cache data from Nutstore to your device. This lets you sync immediately on a new device without the long waiting time normally needed to scan all your files.',
+				'Import previously exported cache data from the remote server to your device. This lets you sync immediately on a new device without the long waiting time normally needed to scan all your files.',
 			restore: 'Import',
 			clearName: 'Clear local cache',
 			clearDesc:
-				'Delete local cache data stored on this device only. This action cannot be undone and will require rebuilding the cache before the next sync. Your Nutstore data remains intact.',
+				'Delete local cache data stored on this device only. This action cannot be undone and will require rebuilding the cache before the next sync. Your remote data remains intact.',
 			clear: 'Clear',
 			confirm: 'Confirm clear',
 			cleared: 'Cache cleared successfully',
@@ -266,7 +271,7 @@ export default {
 			conflictsMarkedInFile: 'Conflicts found and marked in file',
 			requestsTooFrequent:
 				'Requests too frequent, please wait a few minutes and try again',
-			accountNotConfigured: 'Nutstore account not configured. Please configure your account in settings first.',
+			accountNotConfigured: 'WebDAV account not configured. Please configure your account in settings first.',
 		},
 		requestsTooFrequent:
 			'Requests too frequent, plugin will resume sync at {{time}}',
@@ -294,7 +299,7 @@ export default {
 		failedStatus: 'Sync failed',
 		cancelled: 'Sync cancelled',
 		suggestUseClientForManyTasks:
-			'Tip: When there are many sync tasks, we recommend using the Nutstore client for better performance and stability. The plugin is more suitable for mobile use!',
+			'Tip: When there are many sync tasks, we recommend using the desktop sync client for better performance and stability. The plugin is more suitable for mobile use!',
 		modalTitle: 'Syncing',
 		cancelButton: 'Cancel sync',
 		progressText: 'Syncing files',

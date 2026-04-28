@@ -1,10 +1,10 @@
 {
-	"id": "nutstore-sync",
-	"name": "Nutstore Sync",
-	"version": "1.1.3",
+	"id": "obsidian-webdav-sync",
+	"name": "WebDAV Sync",
+	"version": "2.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Sync your vault with Nutstore/坚果云 using WebDAV protocol.",
-	"author": "nutstore",
+	"description": "Sync your vault with any WebDAV server.",
+	"author": "obsidian-webdav-sync",
 	"authorUrl": "https://github.com/nutstore",
 	"isDesktopOnly": false
 }

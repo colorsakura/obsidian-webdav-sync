@@ -1,7 +1,5 @@
 import { Platform, requireApiVersion } from 'obsidian'
 
-export const NS_NSDAV_ENDPOINT = process.env.NS_NSDAV_ENDPOINT!
-export const NS_DAV_ENDPOINT = process.env.NS_DAV_ENDPOINT!
 export const PLUGIN_VERSION = process.env.PLUGIN_VERSION!
 
 export const API_VER_STAT_FOLDER = '0.13.27'

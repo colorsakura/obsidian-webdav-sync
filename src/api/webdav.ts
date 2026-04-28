@@ -2,10 +2,11 @@ import { XMLParser } from 'fast-xml-parser'
 import { isNil, partial } from 'lodash-es'
 import { basename, join } from 'path-browserify'
 import { FileStat } from 'webdav'
-import { NS_DAV_ENDPOINT } from '~/consts'
+
 import { is503Error } from '~/utils/is-503-error'
 import logger from '~/utils/logger'
 import requestUrl from '~/utils/request-url'
+import sleep from '~/utils/sleep'
 
 interface WebDAVResponse {
 	multistatus: {
@@ -54,13 +55,14 @@ function convertToFileStat(
 export async function getDirectoryContents(
 	token: string,
 	path: string,
+	endpoint: string,
 ): Promise<FileStat[]> {
 	const contents: FileStat[] = []
 	path = path.split('/').map(encodeURIComponent).join('/')
 	if (!path.startsWith('/')) {
 		path = '/' + path
 	}
-	let currentUrl = `${NS_DAV_ENDPOINT}${path}`
+	let currentUrl = `${endpoint}${path}`
 
 	while (true) {
 		try {
@@ -100,7 +102,7 @@ export async function getDirectoryContents(
 				: [result.multistatus.response]
 
 			// 跳过第一个条目（当前目录）
-			contents.push(...items.slice(1).map(partial(convertToFileStat, '/dav')))
+			contents.push(...items.slice(1).map(partial(convertToFileStat, new URL(endpoint).pathname)))
 
 			const linkHeader = response.headers['link'] || response.headers['Link']
 			if (!linkHeader) {

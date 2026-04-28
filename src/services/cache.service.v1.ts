@@ -178,6 +178,7 @@ export default class CacheServiceV1 {
 			const files = await getDirectoryContents(
 				await this.plugin.getToken(),
 				this.remoteCacheDir,
+				this.plugin.settings.webdavEndpoint,
 			)
 			return files.map(fileStatToStatModel)
 		} catch (error) {

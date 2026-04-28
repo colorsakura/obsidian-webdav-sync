@@ -1,7 +1,7 @@
 import { chunk, debounce, isNil } from 'lodash-es'
 import { Vault } from 'obsidian'
 import { emitSyncUpdateMtimeProgress } from '~/events'
-import { NutstoreFileSystem } from '~/fs/nutstore'
+import { WebDAVRemoteFileSystem } from '~/fs/webdav-remote'
 import { syncRecordKV } from '~/storage'
 import { blobStore } from '~/storage/blob'
 import { SyncRecord } from '~/storage/sync-record'
@@ -40,10 +40,11 @@ export async function updateMtimeInRecord(
 	}
 
 	const token = await plugin.getToken()
-	const remoteFs = new NutstoreFileSystem({
+	const remoteFs = new WebDAVRemoteFileSystem({
 		vault,
 		token,
 		remoteBaseDir: stdRemotePath(remoteBaseDir),
+		endpoint: plugin.settings.webdavEndpoint,
 	})
 
 	const latestRemoteEntities = await remoteFs.walk()

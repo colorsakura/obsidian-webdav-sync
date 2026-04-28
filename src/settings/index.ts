@@ -1,5 +1,4 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
-import { onSsoReceive } from '~/events/sso-receive'
 import i18n from '~/i18n'
 import type NutstorePlugin from '~/index'
 import { ConflictStrategy } from '~/sync/tasks/conflict-resolve.task'
@@ -17,14 +16,13 @@ export enum SyncMode {
 }
 
 export interface NutstoreSettings {
-	account: string
-	credential: string
+	webdavEndpoint: string
+	webdavUsername: string
+	webdavPassword: string
 	remoteDir: string
 	remoteCacheDir?: string
 	useGitStyle: boolean
 	conflictStrategy: ConflictStrategy
-	oauthResponseText: string
-	loginMode: 'manual' | 'sso'
 	confirmBeforeSync: boolean
 	confirmBeforeDeleteInAutoSync: boolean
 	syncMode: SyncMode
@@ -65,10 +63,6 @@ export class NutstoreSettingTab extends PluginSettingTab {
 	logSettings: LogSettings
 	cacheSettings: CacheSettings
 	warningContainerEl: HTMLElement
-
-	subSso = onSsoReceive().subscribe(() => {
-		this.display()
-	})
 
 	constructor(app: App, plugin: NutstorePlugin) {
 		super(app, plugin)
@@ -116,10 +110,6 @@ export class NutstoreSettingTab extends PluginSettingTab {
 		await this.filterSettings.display()
 		await this.cacheSettings.display()
 		await this.logSettings.display()
-	}
-
-	get isSSO() {
-		return this.plugin.settings.loginMode === 'sso'
 	}
 
 	async hide() {

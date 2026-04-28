@@ -16,7 +16,7 @@ import {
 } from '~/events'
 import IFileSystem from '~/fs/fs.interface'
 import { LocalVaultFileSystem } from '~/fs/local-vault'
-import { NutstoreFileSystem } from '~/fs/nutstore'
+import { WebDAVRemoteFileSystem } from '~/fs/webdav-remote'
 import i18n from '~/i18n'
 import { syncRecordKV } from '~/storage'
 import { SyncRecord } from '~/storage/sync-record'
@@ -65,7 +65,11 @@ export class NutstoreSync {
 	) {
 		this.options = Object.freeze(this.options)
 		const filterRules = computeEffectiveFilterRules(plugin)
-		this.remoteFs = new NutstoreFileSystem({ ...this.options, filterRules })
+		this.remoteFs = new WebDAVRemoteFileSystem({
+			...this.options,
+			filterRules,
+			endpoint: plugin.settings.webdavEndpoint,
+		})
 		this.localFS = new LocalVaultFileSystem({
 			vault: this.options.vault,
 			syncRecord: new SyncRecord(
