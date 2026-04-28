@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  webdav@5.9.0:
-    hash: 73251c16941cecc487260354a5f287543a829e7aba127b81aadc0d193f91b776
-    path: patches/webdav@5.9.0.patch
-
 importers:
 
   .:
@@ -176,8 +171,8 @@ importers:
         specifier: ^3.1.2
         version: 3.2.4(@types/node@16.18.126)(jiti@2.6.1)(sass-embedded@1.99.0)(sass@1.99.0)
       webdav:
-        specifier: ^5.7.1
-        version: 5.9.0(patch_hash=73251c16941cecc487260354a5f287543a829e7aba127b81aadc0d193f91b776)
+        specifier: ^5.9.0
+        version: 5.9.0
       webdav-explorer:
         specifier: 'workspace: *'
         version: link:packages/webdav-explorer
@@ -8090,7 +8085,7 @@ snapshots:
 
   web-streams-polyfill@3.3.3: {}
 
-  webdav@5.9.0(patch_hash=73251c16941cecc487260354a5f287543a829e7aba127b81aadc0d193f91b776):
+  webdav@5.9.0:
     dependencies:
       '@buttercup/fetch': 0.2.1
       base-64: 1.0.0
