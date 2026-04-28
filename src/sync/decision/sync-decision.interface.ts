@@ -11,6 +11,7 @@ export interface SyncDecisionSettings {
 	useGitStyle: boolean
 	syncMode: SyncMode
 	configDir: string
+	encryptionEnabled: boolean
 }
 
 export interface SyncRecordItem {

@@ -102,3 +102,68 @@ input.success {
 .task-list-table tr:hover {
 	background-color: var(--background-modifier-hover);
 }
+
+/* 加密设置警告 */
+.nutstore-encryption-warning {
+	background-color: var(--background-secondary);
+	border-left: 4px solid var(--text-warning);
+	padding: 8px 12px;
+	margin: 8px 0;
+	border-radius: 4px;
+}
+
+.nutstore-encryption-warning p {
+	margin: 4px 0;
+	font-size: 0.9em;
+	color: var(--text-muted);
+}
+
+.nutstore-encryption-error {
+	padding: 4px 8px;
+	margin: 4px 0;
+	font-size: 0.85em;
+}
+
+/* 迁移 Modal */
+.nutstore-text-warning {
+	color: var(--text-warning);
+}
+
+.nutstore-migration-scanning {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.nutstore-migration-hint {
+	color: var(--text-muted);
+	font-size: 0.85em;
+	padding: 8px;
+	background-color: var(--background-secondary);
+	border-radius: 4px;
+}
+
+.nutstore-migration-progress {
+	margin: 12px 0;
+	background-color: var(--background-secondary);
+	border-radius: 4px;
+	overflow: hidden;
+	position: relative;
+	height: 24px;
+}
+
+.nutstore-migration-progress-bar {
+	height: 100%;
+	background-color: var(--interactive-accent);
+	transition: width 0.3s ease;
+	width: 0%;
+}
+
+.nutstore-migration-progress-text {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 0.75em;
+	color: var(--text-normal);
+	white-space: nowrap;
+}

@@ -122,6 +122,12 @@ export default class NutstorePlugin extends Plugin {
 			autoSyncIntervalSeconds: 300,
 			language: undefined,
 			configDirSyncMode: 'none',
+		encryption: {
+			enabled: false,
+			secretId: 'nutstore-encryption-key',
+			salt: '',
+			keyHash: '',
+		},
 		}
 
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData())

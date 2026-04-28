@@ -1,3 +1,4 @@
+import { encrypt } from '~/crypto'
 import logger from '~/utils/logger'
 import { BaseTask, toTaskError } from './task.interface'
 
@@ -9,7 +10,13 @@ export default class PushTask extends BaseTask {
 				throw new Error('cannot find file in local fs: ' + this.localPath)
 			}
 
-			const content = await this.vault.adapter.readBinary(this.localPath)
+			let content = await this.vault.adapter.readBinary(this.localPath)
+
+			// 端到端加密
+			if (this.options.encryptionKey) {
+				content = await encrypt(content, this.options.encryptionKey)
+			}
+
 			const res = await this.webdav.putFileContents(this.remotePath, content, {
 				overwrite: true,
 			})

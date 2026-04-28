@@ -1,5 +1,6 @@
 import { isEqual, noop } from 'lodash-es'
 import { BufferLike } from 'webdav'
+import { decrypt, encrypt } from '~/crypto'
 import i18n from '~/i18n'
 import { StatModel } from '~/model/stat.model'
 import { SyncRecordModel } from '~/model/sync-record.model'
@@ -104,14 +105,21 @@ export default class ConflictResolveTask extends BaseTask {
 					),
 				}
 			}
-			const localContent = await this.vault.adapter.readBinary(this.localPath)
-			const remoteContent = (await this.webdav.getFileContents(
+			let localContent = await this.vault.adapter.readBinary(this.localPath)
+			let remoteBuffer = (await this.webdav.getFileContents(
 				this.remotePath,
 				{
 					details: false,
 					format: 'binary',
 				},
 			)) as BufferLike
+			let remoteContent = bufferLikeToArrayBuffer(remoteBuffer)
+
+			// 端到端解密
+			if (this.options.encryptionKey) {
+				localContent = await decrypt(localContent, this.options.encryptionKey)
+				remoteContent = await decrypt(remoteContent, this.options.encryptionKey)
+			}
 
 			const result = resolveByLatestTimestamp({
 				localMtime,
@@ -122,17 +130,21 @@ export default class ConflictResolveTask extends BaseTask {
 
 			switch (result.status) {
 				case LatestTimestampResolution.UseRemote:
-					const arrayBuffer =
-						result.content instanceof ArrayBuffer
-							? result.content
-							: new Uint8Array(result.content).buffer
-					await this.vault.adapter.writeBinary(this.localPath, arrayBuffer)
+					await this.vault.adapter.writeBinary(this.localPath, result.content as ArrayBuffer)
 					break
-				case LatestTimestampResolution.UseLocal:
-					await this.webdav.putFileContents(this.remotePath, result.content, {
+				case LatestTimestampResolution.UseLocal: {
+					let content = result.content instanceof ArrayBuffer
+						? result.content
+						: new Uint8Array(result.content).buffer
+					// 端到端加密（写回远端）
+					if (this.options.encryptionKey) {
+						content = await encrypt(content, this.options.encryptionKey)
+					}
+					await this.webdav.putFileContents(this.remotePath, content, {
 						overwrite: true,
 					})
 					break
+				}
 				case LatestTimestampResolution.NoChange:
 					noop()
 					break
@@ -151,13 +163,20 @@ export default class ConflictResolveTask extends BaseTask {
 			if (!exists) {
 				throw new Error('cannot find file in local fs: ' + this.localPath)
 			}
-			const localBuffer = await this.vault.adapter.readBinary(this.localPath)
-			const remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
+			let localBuffer = await this.vault.adapter.readBinary(this.localPath)
+			let remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
 				format: 'binary',
 				details: false,
 			})) as BufferLike
+			let remoteContent = bufferLikeToArrayBuffer(remoteBuffer)
 
-			if (isEqual(localBuffer, remoteBuffer)) {
+			// 端到端解密
+			if (this.options.encryptionKey) {
+				localBuffer = await decrypt(localBuffer, this.options.encryptionKey)
+				remoteContent = await decrypt(remoteContent, this.options.encryptionKey)
+			}
+
+			if (isEqual(localBuffer, remoteContent)) {
 				return { success: true } as const
 			}
 
@@ -176,7 +195,7 @@ export default class ConflictResolveTask extends BaseTask {
 			}
 
 			const localText = await new Blob([new Uint8Array(localBuffer)]).text()
-			const remoteText = await new Blob([new Uint8Array(remoteBuffer)]).text()
+			const remoteText = await new Blob([new Uint8Array(remoteContent)]).text()
 			const baseText = (await baseBlob?.text()) ?? localText
 
 			const mergeResult = await resolveByIntelligentMerge({
@@ -202,9 +221,15 @@ export default class ConflictResolveTask extends BaseTask {
 				return { success: true } as const
 			}
 
+			// 端到端加密（写回远端）
+			let uploadContent: ArrayBuffer | string = mergedText
+			if (this.options.encryptionKey) {
+				uploadContent = await encrypt(textToArrayBuffer(mergedText), this.options.encryptionKey)
+			}
+
 			const putResult = await this.webdav.putFileContents(
 				this.remotePath,
-				mergedText,
+				uploadContent,
 				{ overwrite: true },
 			)
 
@@ -229,13 +254,20 @@ export default class ConflictResolveTask extends BaseTask {
 			if (!exists) {
 				throw new Error('cannot find file in local fs: ' + this.localPath)
 			}
-			const localBuffer = await this.vault.adapter.readBinary(this.localPath)
-			const remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
+			let localBuffer = await this.vault.adapter.readBinary(this.localPath)
+			let remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
 				format: 'binary',
 				details: false,
 			})) as BufferLike
+			let remoteContent = bufferLikeToArrayBuffer(remoteBuffer)
 
-			if (isEqual(localBuffer, remoteBuffer)) {
+			// 端到端解密
+			if (this.options.encryptionKey) {
+				localBuffer = await decrypt(localBuffer, this.options.encryptionKey)
+				remoteContent = await decrypt(remoteContent, this.options.encryptionKey)
+			}
+
+			if (isEqual(localBuffer, remoteContent)) {
 				return { success: true } as const
 			}
 
@@ -254,7 +286,7 @@ export default class ConflictResolveTask extends BaseTask {
 			}
 
 			const localText = await new Blob([new Uint8Array(localBuffer)]).text()
-			const remoteText = await new Blob([new Uint8Array(remoteBuffer)]).text()
+			const remoteText = await new Blob([new Uint8Array(remoteContent)]).text()
 			const baseText = (await baseBlob?.text()) ?? localText
 
 			const mergeResult = await resolveByIntelligentMerge({
@@ -273,9 +305,15 @@ export default class ConflictResolveTask extends BaseTask {
 				// The task should handle this merged text (which might contain markers).
 				const mergedDmpText = mergeDigInResult.result.join('\n')
 
+				// 端到端加密（写回远端）
+				let uploadContent: ArrayBuffer | string = mergedDmpText
+				if (this.options.encryptionKey) {
+					uploadContent = await encrypt(textToArrayBuffer(mergedDmpText), this.options.encryptionKey)
+				}
+
 				const putResult = await this.webdav.putFileContents(
 					this.remotePath,
-					mergedDmpText,
+					uploadContent,
 					{ overwrite: true },
 				)
 
@@ -304,9 +342,15 @@ export default class ConflictResolveTask extends BaseTask {
 			}
 
 			// If mergedText is different from remoteText, then both remote and local need to be updated.
+			// 端到端加密（写回远端）
+			let uploadContent: ArrayBuffer | string = mergedText
+			if (this.options.encryptionKey) {
+				uploadContent = await encrypt(textToArrayBuffer(mergedText), this.options.encryptionKey)
+			}
+
 			const putResult = await this.webdav.putFileContents(
 				this.remotePath,
-				mergedText,
+				uploadContent,
 				{ overwrite: true },
 			)
 
@@ -324,4 +368,31 @@ export default class ConflictResolveTask extends BaseTask {
 			return { success: false, error: toTaskError(e, this) }
 		}
 	}
+}
+
+function bufferLikeToArrayBuffer(buffer: BufferLike): ArrayBuffer {
+	if (buffer instanceof ArrayBuffer) {
+		return buffer
+	}
+	return toArrayBuffer(buffer as Buffer)
+}
+
+/**
+ * 将 string 编码为 ArrayBuffer
+ */
+function textToArrayBuffer(text: string): ArrayBuffer {
+	const encoded = new TextEncoder().encode(text)
+	return encoded.buffer.slice(
+		encoded.byteOffset,
+		encoded.byteOffset + encoded.byteLength,
+	) as ArrayBuffer
+}
+
+function toArrayBuffer(buf: Buffer): ArrayBuffer {
+	if (buf.buffer instanceof SharedArrayBuffer) {
+		const copy = new ArrayBuffer(buf.byteLength)
+		new Uint8Array(copy).set(buf)
+		return copy
+	}
+	return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
 }

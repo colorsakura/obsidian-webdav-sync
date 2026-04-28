@@ -2,6 +2,25 @@
 
 本项目的所有重要更改都将记录在此文件中。All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### 新增功能 / Features
+- 🔐 **端到端加密**: 文件上传到 WebDAV 前自动加密，下载后自动解密。远端始终存储密文，服务器无法读取内容。
+  - AES-256-GCM 加密，零外部依赖（使用浏览器内置 Web Crypto API）
+  - PBKDF2 密钥派生，密钥存储在 Obsidian SecretStorage 中
+  - 向前兼容：支持明文/密文混合存储，自动识别
+  - 明文→密文一键迁移
+  - 密码修改 + 全量重加密支持
+  - 移动端自动降低 PBKDF2 迭代次数以保证性能
+
+- 🔐 **End-to-End Encryption**: Files are automatically encrypted before uploading to WebDAV and decrypted after downloading. Remote storage always contains ciphertext, unreadable by the server.
+  - AES-256-GCM encryption with zero external dependencies (uses browser built-in Web Crypto API)
+  - PBKDF2 key derivation, keys stored in Obsidian SecretStorage
+  - Forward compatible: supports mixed plaintext/ciphertext storage with automatic detection
+  - One-click plaintext→ciphertext migration
+  - Password change + full re-encryption support
+  - Mobile auto-reduces PBKDF2 iterations for performance
+
 ## [1.1.3] - 2026-02-14
 
 - 优化了设置访问的稳定性和错误处理。

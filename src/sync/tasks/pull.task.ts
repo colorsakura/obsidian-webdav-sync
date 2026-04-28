@@ -1,5 +1,6 @@
 import { dirname } from 'path-browserify'
 import { BufferLike } from 'webdav'
+import { decrypt } from '~/crypto'
 import logger from '~/utils/logger'
 import { mkdirsVault } from '~/utils/mkdirs-vault'
 import { BaseTask, BaseTaskOptions, toTaskError } from './task.interface'
@@ -23,7 +24,13 @@ export default class PullTask extends BaseTask {
 				format: 'binary',
 				details: false,
 			})) as BufferLike
-			const arrayBuffer = bufferLikeToArrayBuffer(file)
+			let arrayBuffer = bufferLikeToArrayBuffer(file)
+
+			// 端到端解密
+			if (this.options.encryptionKey) {
+				arrayBuffer = await decrypt(arrayBuffer, this.options.encryptionKey)
+			}
+
 			if (arrayBuffer.byteLength !== this.remoteSize) {
 				throw new Error('Remote Size Not Match!')
 			}

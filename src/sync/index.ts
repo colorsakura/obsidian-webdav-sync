@@ -6,6 +6,7 @@ import { WebDAVClient } from 'webdav'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal'
 import FailedTasksModal, { FailedTaskInfo } from '~/components/FailedTasksModal'
 import TaskListConfirmModal from '~/components/TaskListConfirmModal'
+import { loadEncryptionKey } from '~/crypto'
 import {
 	emitEndSync,
 	emitPreparingSync,
@@ -90,6 +91,9 @@ export class NutstoreSync {
 			const showNotice = mode === SyncStartMode.MANUAL_SYNC
 			emitPreparingSync({ showNotice })
 
+			// 清除 WebDAV 遍历缓存，确保获取最新的远程文件状态
+			await (this.remoteFs as WebDAVRemoteFileSystem).clearTraversalCache()
+
 			const settings = this.settings
 			const webdav = this.webdav
 			const remoteBaseDir = stdRemotePath(this.options.remoteBaseDir)
@@ -97,6 +101,9 @@ export class NutstoreSync {
 				getDBKey(this.vault.getName(), this.remoteBaseDir),
 				syncRecordKV,
 			)
+
+			// 加载端到端加密密钥
+			const encryptionKey = await loadEncryptionKey(this.app, this.settings.encryption)
 
 			let remoteBaseDirExits = await webdav.exists(remoteBaseDir)
 
@@ -128,7 +135,7 @@ export class NutstoreSync {
 				}
 			}
 
-			const tasks = await new TwoWaySyncDecider(this, syncRecord).decide()
+			const tasks = await new TwoWaySyncDecider(this, syncRecord, encryptionKey).decide()
 
 			if (tasks.length === 0) {
 				emitEndSync({ showNotice, failedCount: 0 })
@@ -270,6 +277,7 @@ export class NutstoreSync {
 								remotePath: parentRemotePath,
 								localPath: parentLocalPath,
 								syncRecord: syncRecord,
+								encryptionKey,
 							})
 							mkdirTasksMap.set(parentRemotePath, mkdirTask)
 						}

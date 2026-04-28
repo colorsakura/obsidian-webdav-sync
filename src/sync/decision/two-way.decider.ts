@@ -1,5 +1,6 @@
 import { isEqual } from 'ohash'
 import { blobStore } from '~/storage/blob'
+import { SyncRecord } from '~/storage/sync-record'
 import CleanRecordTask from '../tasks/clean-record.task'
 import ConflictResolveTask from '../tasks/conflict-resolve.task'
 import FilenameErrorTask from '../tasks/filename-error.task'
@@ -23,6 +24,14 @@ import {
 import { twoWayDecider } from './two-way.decider.function'
 
 export default class TwoWaySyncDecider extends BaseSyncDecider {
+	constructor(
+		sync: BaseSyncDecider['sync'],
+		syncRecordStorage: SyncRecord,
+		private encryptionKey?: CryptoKey | null,
+	) {
+		super(sync, syncRecordStorage)
+	}
+
 	async decide(): Promise<BaseTask[]> {
 		const syncRecordStorage = this.getSyncRecordStorage()
 		const [records, localStats, remoteStats] = await Promise.all([
@@ -37,6 +46,7 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 			vault: this.vault,
 			remoteBaseDir: this.remoteBaseDir,
 			syncRecord: syncRecordStorage,
+			encryptionKey: this.encryptionKey,
 		}
 
 		// 创建Task工厂
@@ -90,6 +100,7 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 				useGitStyle: this.settings.useGitStyle,
 				syncMode: this.settings.syncMode,
 				configDir: this.vault.configDir,
+				encryptionEnabled: !!this.encryptionKey,
 			},
 			localStats,
 			remoteStats,

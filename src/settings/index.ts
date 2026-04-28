@@ -1,12 +1,14 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import i18n from '~/i18n'
 import type NutstorePlugin from '~/index'
+import { EncryptionSettings } from '~/crypto/types'
 import { ConflictStrategy } from '~/sync/tasks/conflict-resolve.task'
 import { GlobMatchOptions } from '~/utils/glob-match'
 import waitUntil from '~/utils/wait-until'
 import AccountSettings from './account'
 import CacheSettings from './cache'
 import CommonSettings from './common'
+import EncryptionSettingsTab from './encryption'
 import FilterSettings from './filter'
 import LogSettings from './log'
 
@@ -38,6 +40,7 @@ export interface NutstoreSettings {
 	autoSyncIntervalSeconds: number
 	language?: 'zh' | 'en'
 	configDirSyncMode?: 'none' | 'bookmarks' | 'all'
+	encryption: EncryptionSettings
 }
 
 let pluginInstance: NutstorePlugin | null = null
@@ -62,6 +65,7 @@ export class NutstoreSettingTab extends PluginSettingTab {
 	filterSettings: FilterSettings
 	logSettings: LogSettings
 	cacheSettings: CacheSettings
+	encryptionSettings: EncryptionSettingsTab
 	warningContainerEl: HTMLElement
 
 	constructor(app: App, plugin: NutstorePlugin) {
@@ -92,6 +96,12 @@ export class NutstoreSettingTab extends PluginSettingTab {
 			this,
 			this.containerEl.createDiv(),
 		)
+		this.encryptionSettings = new EncryptionSettingsTab(
+			this.app,
+			this.plugin,
+			this,
+			this.containerEl.createDiv(),
+		)
 		this.logSettings = new LogSettings(
 			this.app,
 			this.plugin,
@@ -109,6 +119,7 @@ export class NutstoreSettingTab extends PluginSettingTab {
 		await this.commonSettings.display()
 		await this.filterSettings.display()
 		await this.cacheSettings.display()
+		await this.encryptionSettings.display()
 		await this.logSettings.display()
 	}
 

@@ -47,6 +47,9 @@ export async function updateMtimeInRecord(
 		endpoint: plugin.settings.webdavEndpoint,
 	})
 
+	// 清除缓存以获取最新的远程文件状态（包括刚刚推送的文件）
+	await remoteFs.clearTraversalCache()
+
 	const latestRemoteEntities = await remoteFs.walk()
 	const remoteEntityMap = new Map(
 		latestRemoteEntities.map((e) => [e.stat.path, e]),

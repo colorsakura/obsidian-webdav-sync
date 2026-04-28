@@ -3,6 +3,7 @@ import { isAbsolute } from 'path-browserify'
 import { isNotNil } from 'ramda'
 import { createClient, WebDAVClient } from 'webdav'
 import { useSettings } from '~/settings'
+import { traverseWebDAVKV } from '~/storage/kv'
 import {
 	ConfigDirSyncMode,
 	isPathAllowedByConfigDirMode,
@@ -41,6 +42,14 @@ export class WebDAVRemoteFileSystem implements AbstractFileSystem {
 				Authorization: `Basic ${this.options.token}`,
 			},
 		})
+	}
+
+	async clearTraversalCache(): Promise<void> {
+		const kvKey = await getTraversalWebDAVDBKey(
+			this.options.token,
+			this.options.remoteBaseDir,
+		)
+		await traverseWebDAVKV.unset(kvKey)
 	}
 
 	async walk() {

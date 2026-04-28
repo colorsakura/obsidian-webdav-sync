@@ -12,6 +12,8 @@ export interface BaseTaskOptions {
 	remotePath: string
 	localPath: string
 	syncRecord: SyncRecord
+	/** 端到端加密密钥，未启用加密时为 null */
+	encryptionKey?: CryptoKey | null
 }
 
 interface TaskSuccessResult {

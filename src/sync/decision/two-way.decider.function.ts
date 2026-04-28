@@ -1,4 +1,5 @@
 import { parse as bytesParse } from 'bytes-iec'
+import { ENCRYPTION_OVERHEAD } from '~/crypto'
 import { SyncMode } from '~/settings'
 import { hasInvalidChar } from '~/utils/has-invalid-char'
 import { isSameTime } from '~/utils/is-same-time'
@@ -328,7 +329,7 @@ export async function twoWayDecider(
 						settings.syncMode === SyncMode.LOOSE &&
 						!remote.isDeleted &&
 						!remote.isDir &&
-						remote.size === local.size
+						isSameSizeInLooseMode(remote.size, local.size, settings.encryptionEnabled)
 					) {
 						tasks.push(
 							taskFactory.createNoopTask({
@@ -746,4 +747,22 @@ export async function twoWayDecider(
 
 	tasks.splice(0, 0, ...allFolderTasks)
 	return tasks
+}
+
+/**
+ * 在 LOOSE 同步模式下比较文件大小
+ *
+ * 加密启用时：远端文件大小 = 本地文件大小 + 35 bytes (header 19 + GCM tag 16)
+ * 因此需要减去 ENCRYPTION_OVERHEAD 再比较
+ */
+function isSameSizeInLooseMode(
+	remoteSize: number,
+	localSize: number,
+	encryptionEnabled: boolean,
+): boolean {
+	if (encryptionEnabled) {
+		// 远端密文 = 本地明文 + header + GCM tag
+		return remoteSize - ENCRYPTION_OVERHEAD === localSize
+	}
+	return remoteSize === localSize
 }
