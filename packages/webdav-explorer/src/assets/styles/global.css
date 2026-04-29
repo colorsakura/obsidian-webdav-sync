@@ -1,1 +1,89 @@
-@unocss;
+/* Layout */
+.wde-flex {
+	display: flex;
+}
+.wde-flex-1 {
+	flex: 1 1 0%;
+}
+.wde-flex-col {
+	flex-direction: column;
+}
+.wde-items-center {
+	align-items: center;
+}
+
+/* Spacing */
+.wde-gap-1 {
+	gap: 0.25rem;
+}
+.wde-gap-2 {
+	gap: 0.5rem;
+}
+.wde-gap-4 {
+	gap: 1rem;
+}
+.wde-px-1 {
+	padding-left: 0.25rem;
+	padding-right: 0.25rem;
+}
+.wde-mt-1 {
+	margin-top: 0.25rem;
+}
+
+/* Sizing */
+.wde-max-w-full {
+	max-width: 100%;
+}
+.wde-size-10 {
+	width: 2.5rem;
+	height: 2.5rem;
+}
+.wde-h-50vh {
+	height: 50vh;
+}
+
+/* Typography */
+.wde-truncate {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.wde-text-xs {
+	font-size: 0.75rem;
+	line-height: 1rem;
+}
+.wde-no-underline {
+	text-decoration: none;
+}
+.wde-break-all {
+	word-break: break-all;
+}
+
+/* Visual */
+.wde-rounded {
+	border-radius: 0.25rem;
+}
+.wde-opacity-20 {
+	opacity: 0.2;
+}
+.wde-cursor-not-allowed {
+	cursor: not-allowed;
+}
+
+/* Overflow */
+.wde-overflow-y-auto {
+	overflow-y: auto;
+}
+
+/* Scrollbar */
+.wde-scrollbar-hide {
+	scrollbar-width: none;
+}
+.wde-scrollbar-hide::-webkit-scrollbar {
+	display: none;
+}
+
+/* Hover */
+.wde-hover-bg-accent:hover {
+	background-color: var(--interactive-accent);
+}

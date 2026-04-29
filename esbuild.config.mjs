@@ -1,5 +1,4 @@
 import postcss from '@deanc/esbuild-plugin-postcss'
-import UnoCSS from '@unocss/postcss'
 import dotenv from 'dotenv'
 import esbuild from 'esbuild'
 import fs, { readFileSync } from 'fs'
@@ -52,7 +51,7 @@ const context = await esbuild.context({
 	platform: 'browser',
 	plugins: [
 		postcss({
-			plugins: [UnoCSS(), postcssMergeRules()],
+			plugins: [postcssMergeRules()],
 		}),
 		renamePlugin,
 	],

@@ -1,4 +1,6 @@
-@unocss;
+.hidden {
+	display: none;
+}
 
 .view-action[aria-disabled='true'] {
 	opacity: 0.5;

@@ -36,10 +36,10 @@ function App(props: AppProps) {
 	const SingleCol = () => {
 		const list = createFileList()
 		return (
-			<div class="flex-1 flex flex-col overflow-y-auto scrollbar-hide">
+			<div class="wde-flex-1 wde-flex wde-flex-col wde-overflow-y-auto wde-scrollbar-hide">
 				<Show when={showNewFolder()}>
 					<NewFolder
-						class="mt-1"
+						class="wde-mt-1"
 						onCancel={() => setShowNewFolder(false)}
 						onConfirm={async (name) => {
 							const target = path.join(cwd() ?? '/', name)
@@ -66,18 +66,18 @@ function App(props: AppProps) {
 	}
 
 	return (
-		<div class="flex flex-col gap-4 h-50vh">
+		<div class="wde-flex wde-flex-col wde-gap-4 wde-h-50vh">
 			<SingleCol />
-			<div class="flex gap-2 text-xs">
+			<div class="wde-flex wde-gap-2 wde-text-xs">
 				<span>{t('currentPath')}:</span>
-				<span class="break-all">{cwd() ?? '/'}</span>
+				<span class="wde-break-all">{cwd() ?? '/'}</span>
 			</div>
-			<div class="flex items-center gap-2">
+			<div class="wde-flex wde-items-center wde-gap-2">
 				<button onClick={pop}>{t('goBack')}</button>
-				<a class="no-underline" onClick={() => setShowNewFolder(true)}>
+				<a class="wde-no-underline" onClick={() => setShowNewFolder(true)}>
 					{t('newFolder')}
 				</a>
-				<div class="flex-1"></div>
+				<div class="wde-flex-1"></div>
 				<button onClick={props.onClose}>{t('cancel')}</button>
 				<button onclick={() => props.onConfirm(cwd() ?? '/')}>
 					{t('confirm')}
