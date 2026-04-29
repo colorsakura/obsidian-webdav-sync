@@ -75,6 +75,55 @@ export async function detectRemoteFiles(
 }
 
 /**
+ * 快速采样检测远端是否为加密数据
+ *
+ * 浅遍历 remoteBaseDir，取前 maxFiles 个文件读取前 6 字节，
+ * 检查是否有 OBSENC 魔术头。任意一个命中即返回 true。
+ * 用于同步前置检测（如新设备场景），不做全量递归。
+ *
+ * @param webdav - WebDAV 客户端
+ * @param remoteBaseDir - 远端根目录
+ * @param maxFiles - 最多采样文件数，默认 3
+ * @returns true 表示检测到加密文件
+ */
+export async function sampleRemoteEncryption(
+	webdav: WebDAVClient,
+	remoteBaseDir: string,
+	maxFiles: number = 3,
+): Promise<boolean> {
+	try {
+		const contents = await webdav.getDirectoryContents(remoteBaseDir)
+		const items = Array.isArray(contents) ? contents : [contents]
+		const files = items.filter((item: any) => item.type === 'file')
+
+		let checked = 0
+		for (const file of files) {
+			if (checked >= maxFiles) break
+			try {
+				const headerData = (await webdav.getFileContents(file.filename, {
+					format: 'binary',
+					details: false,
+					headers: {
+						Range: 'bytes=0-5',
+					},
+				})) as BufferLike
+				const headerBuffer = bufferLikeToArrayBuffer(headerData)
+				if (isEncrypted(headerBuffer)) {
+					return true
+				}
+				checked++
+			} catch {
+				// 单个文件读取失败，跳过
+			}
+		}
+		return false
+	} catch {
+		// PROPFIND 失败（如目录不存在），不阻塞同步
+		return false
+	}
+}
+
+/**
  * 执行明文 → 密文迁移
  *
  * 流程：
