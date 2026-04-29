@@ -52,7 +52,31 @@ export default class EncryptionSettingsTab extends BaseSettings {
 					.setValue(plugin.settings.encryption.enabled)
 					.onChange(async (enabled) => {
 						if (enabled) {
-							await showPasswordSetupModal(this.app, plugin)
+							const choice = await showEncryptionSetupChoiceModal(this.app)
+								if (choice === 'setup') {
+									await showPasswordSetupModal(
+										this.app,
+										plugin,
+									)
+								} else if (choice === 'restore') {
+									const password =
+										await showRestoreKeyModal(
+											this.app,
+											plugin.settings.encryption,
+											'恢复加密密钥',
+											'请输入您的加密密码。密钥将从本地配置中的 salt 恢复。',
+										)
+									if (password) {
+										plugin.settings.encryption.enabled =
+											true
+										await plugin.saveSettings()
+										new Notice('密钥已成功恢复', 5000)
+									}
+								} else {
+									plugin.settings.encryption.enabled = false
+									await plugin.saveSettings()
+								}
+								this.display()
 						} else {
 							plugin.settings.encryption.enabled = false
 							await plugin.saveSettings()
@@ -338,6 +362,48 @@ async function showPasswordChangeModal(
 					}
 				})
 		})
+
+		modal.open()
+	})
+}
+
+/**
+ * 加密方式选择 Modal
+ *
+ * 开启加密时让用户选择「设置新密码」还是「从已有加密恢复」。
+ */
+async function showEncryptionSetupChoiceModal(
+	app: App,
+): Promise<'setup' | 'restore' | null> {
+	return new Promise((resolve) => {
+		const modal = new Modal(app)
+		modal.titleEl.setText('设置加密方式')
+
+		const contentEl = modal.contentEl
+		contentEl.createEl('p', {
+			text: '请选择设置新密码或从已有加密恢复。如果其他设备已启用加密，请选择恢复。',
+		})
+
+		new Setting(contentEl).addButton((btn) =>
+			btn.setButtonText('取消').onClick(() => {
+				modal.close()
+				resolve(null)
+			}),
+		)
+
+		new Setting(contentEl).addButton((btn) =>
+			btn.setButtonText('设置新密码').setCta().onClick(() => {
+				modal.close()
+				resolve('setup')
+			}),
+		)
+
+		new Setting(contentEl).addButton((btn) =>
+			btn.setButtonText('从已有加密恢复').onClick(() => {
+				modal.close()
+				resolve('restore')
+			}),
+		)
 
 		modal.open()
 	})
