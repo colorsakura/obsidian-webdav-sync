@@ -6,7 +6,7 @@ import { WebDAVClient } from 'webdav'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal'
 import FailedTasksModal, { FailedTaskInfo } from '~/components/FailedTasksModal'
 import TaskListConfirmModal from '~/components/TaskListConfirmModal'
-import { loadEncryptionKey, sampleRemoteEncryption, showRestoreKeyModal } from '~/crypto'
+import { loadEncryptionKey, sampleRemoteEncryption, SECRET_ID, showRestoreKeyModal } from '~/crypto'
 import {
 	emitEndSync,
 	emitPreparingSync,
@@ -114,34 +114,36 @@ export class NutstoreSync {
 				// 新设备检测：无同步记录 + 远程加密 → 弹出密码恢复 Modal
 				const records = await syncRecord.getRecords()
 				if (records.size === 0) {
+					let remoteEncrypted = false
 					try {
-						const remoteEncrypted = await sampleRemoteEncryption(
+						remoteEncrypted = await sampleRemoteEncryption(
 							webdav,
 							remoteBaseDir,
 						)
-						if (remoteEncrypted) {
-							const password = await showRestoreKeyModal(
-								this.app,
-								this.settings.encryption,
-								'检测到远程数据已加密',
-								'远程文件已使用端到端加密。请输入密码恢复密钥以继续同步。',
-							)
-							if (!password) {
-								// 用户取消，中止同步
-								emitSyncError(new Error(i18n.t('sync.cancelled')))
-								return
-							}
-							// 启用加密并保存设置
-							this.settings.encryption.enabled = true
-							await this.plugin.saveSettings()
-							// 重新加载密钥
-							encryptionKey = await loadEncryptionKey(
-								this.app,
-								this.settings.encryption,
-							)
-						}
 					} catch {
 						// 采样失败不阻塞同步
+					}
+					if (remoteEncrypted) {
+						const password = await showRestoreKeyModal(
+							this.app,
+							this.settings.encryption,
+							'检测到远程数据已加密',
+							'远程文件已使用端到端加密。请输入密码恢复密钥以继续同步。',
+						)
+						if (!password) {
+							// 用户取消，中止同步
+							emitSyncError(new Error(i18n.t('sync.cancelled')))
+							return
+						}
+						// 启用加密并保存设置
+						this.settings.encryption.enabled = true
+						this.settings.encryption.secretId = SECRET_ID
+						await this.plugin.saveSettings()
+						// 重新加载密钥
+						encryptionKey = await loadEncryptionKey(
+							this.app,
+							this.settings.encryption,
+						)
 					}
 				} else if (this.settings.encryption.enabled) {
 					// 旧设备但密钥缺失：显示提示（保持原有行为）
