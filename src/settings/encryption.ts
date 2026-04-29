@@ -17,7 +17,7 @@ import {
 	loadEncryptionKey,
 	setupEncryption,
 	verifyPassword,
-	repairLocalEncryptedFiles,
+	decrypt,
 	showRestoreKeyModal,
 } from '~/crypto'
 import type { NutstoreSettingTab } from './index'
@@ -549,21 +549,28 @@ async function showLocalRepairModal(
 							progressBar.style.width = '0%'
 							progressText.setText(`0 / ${encryptedFiles.length}`)
 
-							const result = await repairLocalEncryptedFiles(
-								vault,
-								key,
-								(current, total) => {
-									const pct = Math.round((current / total) * 100)
-									progressBar.style.width = `${pct}%`
-									progressText.setText(`${current} / ${total}`)
-								},
-							)
+							let success = 0
+							let failed = 0
+							for (let i = 0; i < encryptedFiles.length; i++) {
+								try {
+									const data = await vault.adapter.readBinary(encryptedFiles[i])
+									const decryptedData = await decrypt(data, key)
+									await vault.adapter.writeBinary(encryptedFiles[i], decryptedData)
+									success++
+								} catch {
+									failed++
+								}
+								const pct = Math.round(((i + 1) / encryptedFiles.length) * 100)
+								progressBar.style.width = `${pct}%`
+								progressText.setText(`${i + 1} / ${encryptedFiles.length}`)
+								await new Promise((r) => setTimeout(r, 0))
+							}
 
 							contentEl.empty()
 							contentEl.createEl('p', {
-								text: `修复完成: 成功 ${result.success} 个, 失败 ${result.failed} 个, 扫描 ${result.scanned} 个`,
+								text: `修复完成: 成功 ${success} 个, 失败 ${failed} 个`,
 							})
-							if (result.failed === 0) {
+							if (failed === 0) {
 								contentEl.createEl('p', {
 									text: '✅ 所有加密文件已解密。',
 								})
