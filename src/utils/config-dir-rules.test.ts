@@ -4,10 +4,21 @@ import {
 	computeEffectiveFilterRules,
 	getConfigDirSystemFilterRules,
 	getConfigDirSystemTraversalRules,
-	isPathAllowedByConfigDirMode,
 } from './config-dir-rules'
 
-function createPluginMock(mode: 'none' | 'bookmarks' | 'all') {
+function createPluginMock(
+	mode: 'none' | 'bookmarks' | 'all',
+	filterRules = {
+		exclusionRules: [] as {
+			expr: string
+			options: { caseSensitive: boolean }
+		}[],
+		inclusionRules: [] as {
+			expr: string
+			options: { caseSensitive: boolean }
+		}[],
+	},
+) {
 	return {
 		app: {
 			vault: {
@@ -16,54 +27,10 @@ function createPluginMock(mode: 'none' | 'bookmarks' | 'all') {
 		},
 		settings: {
 			configDirSyncMode: mode,
-			filterRules: {
-				exclusionRules: [],
-				inclusionRules: [],
-			},
+			filterRules,
 		},
 	} as any
 }
-
-describe('isPathAllowedByConfigDirMode', () => {
-	it('blocks all configDir paths in none mode', () => {
-		expect(isPathAllowedByConfigDirMode('.obsidian', '.obsidian', 'none')).toBe(
-			false,
-		)
-		expect(
-			isPathAllowedByConfigDirMode(
-				'.obsidian/workspace.json',
-				'.obsidian',
-				'none',
-			),
-		).toBe(false)
-		expect(
-			isPathAllowedByConfigDirMode('notes/workspace.json', '.obsidian', 'none'),
-		).toBe(true)
-	})
-
-	it('allows bookmarks only inside configDir in bookmarks mode', () => {
-		expect(
-			isPathAllowedByConfigDirMode(
-				'.obsidian/bookmarks.json',
-				'.obsidian',
-				'bookmarks',
-			),
-		).toBe(true)
-		expect(
-			isPathAllowedByConfigDirMode(
-				'.obsidian/workspace.json',
-				'.obsidian',
-				'bookmarks',
-			),
-		).toBe(false)
-		expect(isPathAllowedByConfigDirMode('.obsidian', '.obsidian', 'bookmarks')).toBe(
-			false,
-		)
-		expect(
-			isPathAllowedByConfigDirMode('notes/workspace.json', '.obsidian', 'bookmarks'),
-		).toBe(true)
-	})
-})
 
 describe('computeEffectiveFilterRules', () => {
 	it('generates traversal and filter rules from shared system source', () => {
@@ -80,6 +47,8 @@ describe('computeEffectiveFilterRules', () => {
 				expr: '.obsidian/plugins/**/.pnpm-store',
 				options: { caseSensitive: true },
 			},
+			{ expr: '.obsidian/workspace', options: { caseSensitive: true } },
+			{ expr: '.obsidian/workspace.json', options: { caseSensitive: true } },
 		])
 		expect(filterRules).toEqual(
 			expect.arrayContaining([
@@ -103,6 +72,119 @@ describe('computeEffectiveFilterRules', () => {
 				},
 			]),
 		)
+	})
+
+	it('keeps user configDir whitelist rules in all mode', () => {
+		const rules = computeEffectiveFilterRules(
+			createPluginMock('all', {
+				exclusionRules: [
+					{ expr: '.obsidian/**', options: { caseSensitive: false } },
+				],
+				inclusionRules: [
+					{
+						expr: '.obsidian/snippets/file-tree-colors.css',
+						options: { caseSensitive: false },
+					},
+					{
+						expr: '.obsidian/plugins/manual-sorting/data.json',
+						options: { caseSensitive: false },
+					},
+				],
+			}),
+		)
+		const exclusions = rules.exclusionRules.map(
+			(rule) => new GlobMatch(rule.expr, rule.options),
+		)
+		const inclusions = rules.inclusionRules.map(
+			(rule) => new GlobMatch(rule.expr, rule.options),
+		)
+
+		expect(
+			needIncludeFromGlobRules(
+				'.obsidian/snippets/file-tree-colors.css',
+				inclusions,
+				exclusions,
+			),
+		).toBe(true)
+		expect(
+			needIncludeFromGlobRules(
+				'.obsidian/plugins/manual-sorting/data.json',
+				inclusions,
+				exclusions,
+			),
+		).toBe(true)
+		expect(
+			needIncludeFromGlobRules('.obsidian/app.json', inclusions, exclusions),
+		).toBe(false)
+	})
+
+	it('allows user inclusions to override mode-derived configDir exclusions', () => {
+		const rules = computeEffectiveFilterRules(
+			createPluginMock('none', {
+				exclusionRules: [],
+				inclusionRules: [
+					{
+						expr: '.obsidian/bookmarks.json',
+						options: { caseSensitive: false },
+					},
+				],
+			}),
+		)
+		const exclusions = rules.exclusionRules.map(
+			(rule) => new GlobMatch(rule.expr, rule.options),
+		)
+		const inclusions = rules.inclusionRules.map(
+			(rule) => new GlobMatch(rule.expr, rule.options),
+		)
+
+		expect(
+			needIncludeFromGlobRules(
+				'.obsidian/bookmarks.json',
+				inclusions,
+				exclusions,
+			),
+		).toBe(true)
+		expect(
+			needIncludeFromGlobRules('.obsidian/app.json', inclusions, exclusions),
+		).toBe(false)
+	})
+
+	it('allows user inclusions to extend bookmarks mode', () => {
+		const rules = computeEffectiveFilterRules(
+			createPluginMock('bookmarks', {
+				exclusionRules: [],
+				inclusionRules: [
+					{
+						expr: '.obsidian/snippets/file-tree-colors.css',
+						options: { caseSensitive: false },
+					},
+				],
+			}),
+		)
+		const exclusions = rules.exclusionRules.map(
+			(rule) => new GlobMatch(rule.expr, rule.options),
+		)
+		const inclusions = rules.inclusionRules.map(
+			(rule) => new GlobMatch(rule.expr, rule.options),
+		)
+
+		expect(
+			needIncludeFromGlobRules(
+				'.obsidian/bookmarks.json',
+				inclusions,
+				exclusions,
+			),
+		).toBe(true)
+		expect(
+			needIncludeFromGlobRules(
+				'.obsidian/snippets/file-tree-colors.css',
+				inclusions,
+				exclusions,
+			),
+		).toBe(true)
+		expect(
+			needIncludeFromGlobRules('.obsidian/app.json', inclusions, exclusions),
+		).toBe(false)
 	})
 
 	it('adds plugin dependency exclusions in all mode', () => {
@@ -131,14 +213,11 @@ describe('computeEffectiveFilterRules', () => {
 		)
 	})
 
-	it('keeps configDir mode enforcement even when inclusion matches first', () => {
+	it('uses mode-derived rules as normal glob rules', () => {
 		const inclusion = [new GlobMatch('**/*.json', { caseSensitive: false })]
 		const exclusion = [new GlobMatch('.obsidian', { caseSensitive: false })]
 		expect(
 			needIncludeFromGlobRules('.obsidian/workspace.json', inclusion, exclusion),
 		).toBe(true)
-		expect(
-			isPathAllowedByConfigDirMode('.obsidian/workspace.json', '.obsidian', 'none'),
-		).toBe(false)
 	})
 })

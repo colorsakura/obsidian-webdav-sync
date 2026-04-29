@@ -86,6 +86,9 @@ export async function getDirectoryContents(
           </prop>
         </propfind>`,
 			})
+			if (response.status >= 400) {
+				throw new Error(`${response.status}: ${response.text}`)
+			}
 			const parseXml = new XMLParser({
 				attributeNamePrefix: '',
 				removeNSPrefix: true,

@@ -1,8 +1,8 @@
-const ERROR_MESSAGE = 'Invalid response: 503 Service Unavailable'
-
 export function is503Error(err: Error | string) {
-	if (err instanceof Error) {
-		return err.message === ERROR_MESSAGE
-	}
-	return err === ERROR_MESSAGE
+	const msg = err instanceof Error ? err.message : err
+	return msg.includes('503') && (
+		msg.includes('Service Unavailable') ||
+		msg.includes('BlockedTemporarily') ||
+		msg.includes('Too many requests')
+	)
 }

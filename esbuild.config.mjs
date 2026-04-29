@@ -15,7 +15,7 @@ const renamePlugin = {
 	name: 'rename-plugin',
 	setup(build) {
 		build.onEnd(async () => {
-			fs.renameSync(prod ? './dist/main.css' : './main.css', './styles.css')
+			fs.renameSync('./main.css', './styles.css')
 		})
 	},
 }
@@ -43,11 +43,11 @@ const context = await esbuild.context({
 		'process.env.PLUGIN_VERSION': JSON.stringify(pkgJson.version),
 	},
 	format: 'cjs',
-	target: 'es2018',
+	target: 'es2023',
 	logLevel: 'info',
 	sourcemap: prod ? false : 'inline',
 	treeShaking: true,
-	outfile: prod ? 'dist/main.js' : 'main.js',
+	outfile: 'main.js',
 	minify: prod,
 	platform: 'browser',
 	plugins: [

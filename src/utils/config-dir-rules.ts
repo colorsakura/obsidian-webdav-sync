@@ -10,6 +10,11 @@ export interface EffectiveFilterRules {
 	configDirSyncMode: ConfigDirSyncMode
 }
 
+export interface ConfigDirFilterRuleInput {
+	exclusionRules: GlobMatchOptions[]
+	inclusionRules: GlobMatchOptions[]
+}
+
 const CONFIG_DIR_SYSTEM_EXCLUSION_SUFFIXES = [
 	'plugins/**/node_modules',
 	'plugins/**/.git',
@@ -17,38 +22,6 @@ const CONFIG_DIR_SYSTEM_EXCLUSION_SUFFIXES = [
 	'workspace',
 	'workspace.json',
 ] as const
-
-function normalizePathForCheck(rawPath: string) {
-	return rawPath
-		.replace(/\\/g, '/')
-		.replace(/^\/+/, '')
-		.replace(/\/+$/, '')
-}
-
-function isSameOrSubPath(path: string, baseDir: string) {
-	return path === baseDir || path.startsWith(`${baseDir}/`)
-}
-
-export function isPathAllowedByConfigDirMode(
-	path: string,
-	configDir: string,
-	mode: ConfigDirSyncMode,
-) {
-	const normalizedPath = normalizePathForCheck(path)
-	const normalizedConfigDir = normalizePathForCheck(configDir)
-
-	if (!isSameOrSubPath(normalizedPath, normalizedConfigDir)) {
-		return true
-	}
-
-	if (mode === 'none') {
-		return false
-	}
-	if (mode === 'bookmarks') {
-		return normalizedPath === `${normalizedConfigDir}/bookmarks.json`
-	}
-	return true
-}
 
 function makeCaseSensitiveRule(expr: string): GlobMatchOptions {
 	return { expr, options: { caseSensitive: true } }
@@ -69,26 +42,13 @@ export function getConfigDirSystemFilterRules(configDir: string): GlobMatchOptio
 	])
 }
 
-/**
- * Computes the effective exclusion/inclusion filter rules by merging the
- * user's stored rules with the system-managed configDir rules derived from
- * the current configDirSyncMode setting.
- *
- * Does NOT modify plugin.settings — returns a new rule set for use at
- * sync time only.
- */
-export function computeEffectiveFilterRules(
-	plugin: NutstorePlugin,
+export function computeEffectiveFilterRulesFromParts(
+	configDir: string,
+	mode: ConfigDirSyncMode,
+	filterRules: ConfigDirFilterRuleInput,
 ): EffectiveFilterRules {
-	const configDir = plugin.app.vault.configDir
-	const mode: ConfigDirSyncMode = plugin.settings.configDirSyncMode ?? 'none'
-
-	const exclusionRules = plugin.settings.filterRules.exclusionRules.filter(
-		(r) => r.expr !== configDir && r.expr !== `${configDir}/**`,
-	)
-	const inclusionRules = plugin.settings.filterRules.inclusionRules.filter(
-		(r) => r.expr !== `${configDir}/bookmarks.json`,
-	)
+	const exclusionRules = [...filterRules.exclusionRules]
+	const inclusionRules = [...filterRules.inclusionRules]
 	exclusionRules.push(...getConfigDirSystemFilterRules(configDir))
 
 	if (mode === 'none') {
@@ -111,4 +71,24 @@ export function computeEffectiveFilterRules(
 		configDir,
 		configDirSyncMode: mode,
 	}
+}
+
+/**
+ * Computes the effective exclusion/inclusion filter rules by merging the
+ * user's stored rules with the system-managed configDir rules derived from
+ * the current configDirSyncMode setting.
+ *
+ * Does NOT modify plugin.settings — returns a new rule set for use at
+ * sync time only.
+ */
+export function computeEffectiveFilterRules(
+	plugin: NutstorePlugin,
+): EffectiveFilterRules {
+	const configDir = plugin.app.vault.configDir
+	const mode: ConfigDirSyncMode = plugin.settings.configDirSyncMode ?? 'none'
+	return computeEffectiveFilterRulesFromParts(
+		configDir,
+		mode,
+		plugin.settings.filterRules,
+	)
 }

@@ -6,7 +6,7 @@ import { useSettings } from '~/settings'
 import { traverseWebDAVKV } from '~/storage/kv'
 import {
 	ConfigDirSyncMode,
-	isPathAllowedByConfigDirMode,
+	computeEffectiveFilterRulesFromParts,
 } from '~/utils/config-dir-rules'
 import { getTraversalWebDAVDBKey } from '~/utils/get-db-key'
 import GlobMatch, {
@@ -94,19 +94,22 @@ export class WebDAVRemoteFileSystem implements AbstractFileSystem {
 			}
 		}
 
-		const filterRules = this.options.filterRules
-		const configDir = this.options.filterRules?.configDir ?? this.options.vault.configDir
-		const configDirSyncMode =
-			this.options.filterRules?.configDirSyncMode ?? 'none'
+		const settings = this.options.filterRules ? undefined : await useSettings()
+		const filterRules =
+			this.options.filterRules ??
+			(settings
+				? computeEffectiveFilterRulesFromParts(
+						this.options.vault.configDir,
+						settings.configDirSyncMode ?? 'none',
+						settings.filterRules,
+					)
+				: undefined)
 		const exclusions = this.buildRules(filterRules?.exclusionRules)
 		const inclusions = this.buildRules(filterRules?.inclusionRules)
 
-		const includedStats = stats.filter((stat) => {
-			if (!isPathAllowedByConfigDirMode(stat.path, configDir, configDirSyncMode)) {
-				return false
-			}
-			return needIncludeFromGlobRules(stat.path, inclusions, exclusions)
-		})
+		const includedStats = stats.filter((stat) =>
+			needIncludeFromGlobRules(stat.path, inclusions, exclusions),
+		)
 		const completeStats = completeLossDir(stats, includedStats)
 		const completeStatPaths = new Set(completeStats.map((s) => s.path))
 		const results = stats.map((stat) => ({
