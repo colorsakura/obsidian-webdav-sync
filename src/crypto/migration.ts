@@ -315,7 +315,13 @@ export async function repairLocalEncryptedFiles(
 
 async function walkLocalFiles(vault: Vault, dir = ''): Promise<string[]> {
 	const files: string[] = []
-	const { folders, files: dirFiles } = await vault.adapter.list(dir)
+	let list
+	try {
+		list = await vault.adapter.list(dir)
+	} catch {
+		return files
+	}
+	const { folders, files: dirFiles } = list
 	for (const file of dirFiles) {
 		if (file.startsWith('.')) continue
 		files.push(dir ? `${dir}/${file}` : file)
