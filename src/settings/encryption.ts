@@ -159,18 +159,18 @@ export default class EncryptionSettingsTab extends BaseSettings {
 				.addButton((btn) =>
 					btn.setButtonText('开始迁移').onClick(async () => {
 						await showMigrationModal(this.app, plugin)
-						}),
-					)
+					}),
+				)
 
-				new Setting(containerEl)
-					.setName('修复本地加密文件')
-					.setDesc(
-						'扫描本地文件，解密因密钥缺失而残留的密文数据。仅在本地出现异常加密文件时使用。',
-					)
-					.addButton((btn) =>
-						btn.setButtonText('开始修复').onClick(async () => {
-							await showLocalRepairModal(this.app, plugin)
-							this.display()
+			new Setting(containerEl)
+				.setName('修复本地加密文件')
+				.setDesc(
+					'扫描本地文件，解密因密钥缺失而残留的密文数据。仅在本地出现异常加密文件时使用。',
+				)
+				.addButton((btn) =>
+					btn.setButtonText('开始修复').onClick(async () => {
+						await showLocalRepairModal(this.app, plugin)
+						this.display()
 					}),
 				)
 
