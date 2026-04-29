@@ -587,6 +587,16 @@ async function showLocalRepairModal(
 								contentEl.createEl('p', {
 									text: '✅ 所有加密文件已解密。',
 								})
+							} else if (success === 0 && failed > 0) {
+								contentEl.createEl('p', {
+									text: '⚠️ 全部解密失败，密钥可能不匹配。请确认使用的是加密文件时的原始密码。可尝试在设置 → 加密中重新恢复密钥。',
+									cls: 'nutstore-encryption-error',
+								})
+							} else if (failed > 0) {
+								contentEl.createEl('p', {
+									text: `⚠️ ${failed} 个文件解密失败，可能是文件损坏或密钥不匹配。`,
+									cls: 'nutstore-text-warning',
+								})
 							}
 							new Setting(contentEl).addButton((btn2) =>
 								btn2.setButtonText('关闭').onClick(() => {
@@ -594,7 +604,7 @@ async function showLocalRepairModal(
 									resolve()
 								}),
 							)
-						}),
+							}),
 				)
 				.addButton((btn) =>
 					btn.setButtonText('取消').onClick(() => {
