@@ -601,4 +601,12 @@ export class NutstoreSync {
 	get settings() {
 		return this.plugin.settings
 	}
+
+	get token() {
+		return this.options.token
+	}
+
+	get endpoint() {
+		return this.plugin.settings.webdavEndpoint
+	}
 }
