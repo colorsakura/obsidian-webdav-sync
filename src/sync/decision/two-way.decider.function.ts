@@ -336,7 +336,11 @@ export async function twoWayDecider(
 						settings.syncMode === SyncMode.LOOSE &&
 						!remote.isDeleted &&
 						!remote.isDir &&
-						isSameSizeInLooseMode(remote.size, local.size, settings.encryptionEnabled)
+						isSameSizeInLooseMode(
+							remote.size,
+							local.size,
+							settings.encryptionEnabled,
+						)
 					) {
 						tasks.push(
 							taskFactory.createNoopTask({

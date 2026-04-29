@@ -14,16 +14,16 @@ import { isEncrypted, packHeader, unpackHeader } from './file-header'
  * @returns 带 header 的密文 ArrayBuffer
  */
 export async function encrypt(
-  plaintext: ArrayBuffer,
-  key: CryptoKey,
+	plaintext: ArrayBuffer,
+	key: CryptoKey,
 ): Promise<ArrayBuffer> {
-  const nonce = crypto.getRandomValues(new Uint8Array(12))
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: nonce as BufferSource },
-    key,
-    plaintext,
-  )
-  return packHeader(nonce, ciphertext)
+	const nonce = crypto.getRandomValues(new Uint8Array(12))
+	const ciphertext = await crypto.subtle.encrypt(
+		{ name: 'AES-GCM', iv: nonce as BufferSource },
+		key,
+		plaintext,
+	)
+	return packHeader(nonce, ciphertext)
 }
 
 /**
@@ -36,18 +36,18 @@ export async function encrypt(
  * @returns 明文 ArrayBuffer
  */
 export async function decrypt(
-  wireData: ArrayBuffer,
-  key: CryptoKey,
+	wireData: ArrayBuffer,
+	key: CryptoKey,
 ): Promise<ArrayBuffer> {
-  // 明文文件，兼容旧数据
-  if (!isEncrypted(wireData)) {
-    return wireData
-  }
+	// 明文文件，兼容旧数据
+	if (!isEncrypted(wireData)) {
+		return wireData
+	}
 
-  const { nonce, ciphertext } = unpackHeader(wireData)
-  return crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: nonce as BufferSource },
-    key,
-    ciphertext,
-  )
+	const { nonce, ciphertext } = unpackHeader(wireData)
+	return crypto.subtle.decrypt(
+		{ name: 'AES-GCM', iv: nonce as BufferSource },
+		key,
+		ciphertext,
+	)
 }

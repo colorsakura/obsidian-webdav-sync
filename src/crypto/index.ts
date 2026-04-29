@@ -7,21 +7,23 @@
 
 export { encrypt, decrypt } from './cipher'
 export { deriveKey, getPBKDF2Iterations } from './key-derivation'
-export { isEncrypted, HEADER_SIZE, GCM_TAG_SIZE, ENCRYPTION_OVERHEAD } from './file-header'
 export {
-  setupEncryption,
-  loadEncryptionKey,
-  verifyPassword,
-  SECRET_ID,
+	isEncrypted,
+	HEADER_SIZE,
+	GCM_TAG_SIZE,
+	ENCRYPTION_OVERHEAD,
+} from './file-header'
+export {
+	setupEncryption,
+	loadEncryptionKey,
+	verifyPassword,
+	SECRET_ID,
 } from './key-store'
 export {
-  detectRemoteFiles,
-  migrateToEncrypted,
-  reEncryptAllFiles,
-  filterPlainFiles,
+	detectRemoteFiles,
+	migrateToEncrypted,
+	reEncryptAllFiles,
+	filterPlainFiles,
 } from './migration'
-export type {
-  MigrationFileInfo,
-  MigrationProgressCallback,
-} from './migration'
+export type { MigrationFileInfo, MigrationProgressCallback } from './migration'
 export type { EncryptionSettings, FileHeader } from './types'

@@ -60,9 +60,11 @@ export default class CacheClearModal extends Modal {
 			.setName(i18n.t('settings.cache.clearModal.traverseWebDAVCache.name'))
 			.setDesc(i18n.t('settings.cache.clearModal.traverseWebDAVCache.desc'))
 			.addToggle((toggle) => {
-				toggle.setValue(this.options.traverseWebDAVEnabled).onChange((value) => {
-					this.options.traverseWebDAVEnabled = value
-				})
+				toggle
+					.setValue(this.options.traverseWebDAVEnabled)
+					.onChange((value) => {
+						this.options.traverseWebDAVEnabled = value
+					})
 			})
 
 		// Action buttons
@@ -137,7 +139,9 @@ export default class CacheClearModal extends Modal {
 
 			if (traverseWebDAVEnabled) {
 				await traverseWebDAVKV.clear()
-				cleared.push(i18n.t('settings.cache.clearModal.traverseWebDAVCache.name'))
+				cleared.push(
+					i18n.t('settings.cache.clearModal.traverseWebDAVCache.name'),
+				)
 			}
 
 			return cleared

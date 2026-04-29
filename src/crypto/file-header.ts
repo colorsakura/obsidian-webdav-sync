@@ -34,31 +34,34 @@ export const ENCRYPTION_OVERHEAD = HEADER_SIZE + GCM_TAG_SIZE
  * 判断数据是否以加密 header 开头
  */
 export function isEncrypted(data: ArrayBuffer): boolean {
-  if (data.byteLength < MAGIC.length) return false
-  const header = new Uint8Array(data, 0, MAGIC.length)
-  return header.every((b, i) => b === MAGIC[i])
+	if (data.byteLength < MAGIC.length) return false
+	const header = new Uint8Array(data, 0, MAGIC.length)
+	return header.every((b, i) => b === MAGIC[i])
 }
 
 /**
  * 打包 header: magic + version + nonce + ciphertext
  */
-export function packHeader(nonce: Uint8Array, ciphertext: ArrayBuffer): ArrayBuffer {
-  const header = new Uint8Array(HEADER_SIZE)
-  header.set(MAGIC, 0)
-  header[6] = VERSION
-  header.set(nonce, 7)
+export function packHeader(
+	nonce: Uint8Array,
+	ciphertext: ArrayBuffer,
+): ArrayBuffer {
+	const header = new Uint8Array(HEADER_SIZE)
+	header.set(MAGIC, 0)
+	header[6] = VERSION
+	header.set(nonce, 7)
 
-  const result = new Uint8Array(HEADER_SIZE + ciphertext.byteLength)
-  result.set(header, 0)
-  result.set(new Uint8Array(ciphertext), HEADER_SIZE)
-  return result.buffer
+	const result = new Uint8Array(HEADER_SIZE + ciphertext.byteLength)
+	result.set(header, 0)
+	result.set(new Uint8Array(ciphertext), HEADER_SIZE)
+	return result.buffer
 }
 
 /**
  * 解包 header: 从加密数据中提取 nonce 和 ciphertext
  */
 export function unpackHeader(wireData: ArrayBuffer): FileHeader {
-  const nonce = new Uint8Array(wireData, 7, 12)
-  const ciphertext = wireData.slice(HEADER_SIZE)
-  return { nonce, ciphertext }
+	const nonce = new Uint8Array(wireData, 7, 12)
+	const ciphertext = wireData.slice(HEADER_SIZE)
+	return { nonce, ciphertext }
 }

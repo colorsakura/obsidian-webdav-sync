@@ -11,7 +11,12 @@
 import { App, Modal, Notice, Platform, Setting } from 'obsidian'
 import type NutstorePlugin from '~/index'
 import { EncryptionMigrationModal } from '~/components/EncryptionMigrationModal'
-import { getPBKDF2Iterations, loadEncryptionKey, setupEncryption, verifyPassword } from '~/crypto'
+import {
+	getPBKDF2Iterations,
+	loadEncryptionKey,
+	setupEncryption,
+	verifyPassword,
+} from '~/crypto'
 import type { NutstoreSettingTab } from './index'
 import BaseSettings from './settings.base'
 
@@ -21,12 +26,12 @@ export default class EncryptionSettingsTab extends BaseSettings {
 
 		containerEl.empty()
 
-		new Setting(containerEl)
-			.setName('端到端加密')
-			.setHeading()
+		new Setting(containerEl).setName('端到端加密').setHeading()
 
 		// 密码警告
-		const warningEl = containerEl.createDiv({ cls: 'nutstore-encryption-warning' })
+		const warningEl = containerEl.createDiv({
+			cls: 'nutstore-encryption-warning',
+		})
 		warningEl.createEl('p', {
 			text: '⚠️ 启用加密后，远端文件将以密文存储，服务器无法读取内容。',
 		})
@@ -58,9 +63,7 @@ export default class EncryptionSettingsTab extends BaseSettings {
 			const iterations = getPBKDF2Iterations()
 			new Setting(containerEl)
 				.setName('加密状态')
-				.setDesc(
-					`已启用 (PBKDF2 迭代次数: ${iterations.toLocaleString()})`,
-				)
+				.setDesc(`已启用 (PBKDF2 迭代次数: ${iterations.toLocaleString()})`)
 
 			new Setting(containerEl)
 				.setName('迁移现有文件')
@@ -131,39 +134,34 @@ async function showPasswordSetupModal(
 		let confirmInput: HTMLInputElement
 		let errorEl: HTMLElement
 
-		new Setting(contentEl)
-			.setName('密码')
-			.addText((text) => {
-				text.inputEl.type = 'password'
-				text.inputEl.placeholder = '输入密码 (至少 8 个字符)'
-				passwordInput = text.inputEl
-			})
+		new Setting(contentEl).setName('密码').addText((text) => {
+			text.inputEl.type = 'password'
+			text.inputEl.placeholder = '输入密码 (至少 8 个字符)'
+			passwordInput = text.inputEl
+		})
 
-		new Setting(contentEl)
-			.setName('确认密码')
-			.addText((text) => {
-				text.inputEl.type = 'password'
-				text.inputEl.placeholder = '再次输入密码'
-				confirmInput = text.inputEl
-			})
+		new Setting(contentEl).setName('确认密码').addText((text) => {
+			text.inputEl.type = 'password'
+			text.inputEl.placeholder = '再次输入密码'
+			confirmInput = text.inputEl
+		})
 
 		errorEl = contentEl.createDiv({ cls: 'nutstore-encryption-error' })
 		errorEl.style.color = 'var(--text-error)'
 		errorEl.style.display = 'none'
 
 		new Setting(contentEl).addButton((btn) =>
-			btn
-				.setButtonText('取消')
-				.onClick(() => {
-					plugin.settings.encryption.enabled = false
-					plugin.saveSettings()
-					modal.close()
-					resolve()
-				}),
+			btn.setButtonText('取消').onClick(() => {
+				plugin.settings.encryption.enabled = false
+				plugin.saveSettings()
+				modal.close()
+				resolve()
+			}),
 		)
 
 		new Setting(contentEl).addButton((btn) => {
-			btn.setButtonText('确认设置')
+			btn
+				.setButtonText('确认设置')
 				.setCta()
 				.onClick(async () => {
 					const password = passwordInput.value
@@ -185,11 +183,7 @@ async function showPasswordSetupModal(
 					btn.setButtonText('正在生成密钥...')
 
 					try {
-						await setupEncryption(
-							app,
-							password,
-							plugin.settings.encryption,
-						)
+						await setupEncryption(app, password, plugin.settings.encryption)
 						await plugin.saveSettings()
 						modal.close()
 
@@ -231,45 +225,38 @@ async function showPasswordChangeModal(
 		let confirmInput: HTMLInputElement
 		let errorEl: HTMLElement
 
-		new Setting(contentEl)
-			.setName('旧密码')
-			.addText((text) => {
-				text.inputEl.type = 'password'
-				text.inputEl.placeholder = '输入旧密码'
-				oldPasswordInput = text.inputEl
-			})
+		new Setting(contentEl).setName('旧密码').addText((text) => {
+			text.inputEl.type = 'password'
+			text.inputEl.placeholder = '输入旧密码'
+			oldPasswordInput = text.inputEl
+		})
 
-		new Setting(contentEl)
-			.setName('新密码')
-			.addText((text) => {
-				text.inputEl.type = 'password'
-				text.inputEl.placeholder = '输入新密码 (至少 8 个字符)'
-				newPasswordInput = text.inputEl
-			})
+		new Setting(contentEl).setName('新密码').addText((text) => {
+			text.inputEl.type = 'password'
+			text.inputEl.placeholder = '输入新密码 (至少 8 个字符)'
+			newPasswordInput = text.inputEl
+		})
 
-		new Setting(contentEl)
-			.setName('确认新密码')
-			.addText((text) => {
-				text.inputEl.type = 'password'
-				text.inputEl.placeholder = '再次输入新密码'
-				confirmInput = text.inputEl
-			})
+		new Setting(contentEl).setName('确认新密码').addText((text) => {
+			text.inputEl.type = 'password'
+			text.inputEl.placeholder = '再次输入新密码'
+			confirmInput = text.inputEl
+		})
 
 		errorEl = contentEl.createDiv({ cls: 'nutstore-encryption-error' })
 		errorEl.style.color = 'var(--text-error)'
 		errorEl.style.display = 'none'
 
 		new Setting(contentEl).addButton((btn) =>
-			btn
-				.setButtonText('取消')
-				.onClick(() => {
-					modal.close()
-					resolve()
-				}),
+			btn.setButtonText('取消').onClick(() => {
+				modal.close()
+				resolve()
+			}),
 		)
 
 		new Setting(contentEl).addButton((btn) => {
-			btn.setButtonText('确认修改')
+			btn
+				.setButtonText('确认修改')
 				.setCta()
 				.onClick(async () => {
 					const oldPassword = oldPasswordInput.value
@@ -306,14 +293,13 @@ async function showPasswordChangeModal(
 
 					try {
 						// 使用 setupEncryption 覆盖旧密钥
-						await setupEncryption(
-							app,
-							newPassword,
-							plugin.settings.encryption,
-						)
+						await setupEncryption(app, newPassword, plugin.settings.encryption)
 						await plugin.saveSettings()
 
-						new Notice('密码已修改。请在设置中执行迁移以用新密钥重新加密远端文件。', 8000)
+						new Notice(
+							'密码已修改。请在设置中执行迁移以用新密钥重新加密远端文件。',
+							8000,
+						)
 						modal.close()
 						resolve()
 					} catch (e) {

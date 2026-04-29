@@ -15,18 +15,18 @@ import type { EncryptionSettings } from './types'
  * 需要迁移的文件信息
  */
 export interface MigrationFileInfo {
-  remotePath: string
-  size: number
-  isEncrypted: boolean
+	remotePath: string
+	size: number
+	isEncrypted: boolean
 }
 
 /**
  * 迁移进度回调
  */
 export type MigrationProgressCallback = (
-  current: number,
-  total: number,
-  filePath: string,
+	current: number,
+	total: number,
+	filePath: string,
 ) => void
 
 /**
@@ -37,41 +37,41 @@ export type MigrationProgressCallback = (
  * @returns 文件列表，标记是否已加密
  */
 export async function detectRemoteFiles(
-  webdav: WebDAVClient,
-  remoteBaseDir: string,
+	webdav: WebDAVClient,
+	remoteBaseDir: string,
 ): Promise<MigrationFileInfo[]> {
-  const files: MigrationFileInfo[] = []
+	const files: MigrationFileInfo[] = []
 
-  async function walk(dir: string) {
-    const contents = await webdav.getDirectoryContents(dir)
-    for (const item of Array.isArray(contents) ? contents : [contents]) {
-      const isDir = item.type === 'directory'
-      if (isDir) {
-        await walk(item.filename)
-      } else {
-        // 只读取前 6 bytes 判断是否为加密文件
-        let isEnc = false
-        try {
-          const headerData = (await webdav.getFileContents(item.filename, {
-            format: 'binary',
-            details: false,
-          })) as BufferLike
-          const headerBuffer = bufferLikeToArrayBuffer(headerData)
-          isEnc = isEncrypted(headerBuffer)
-        } catch {
-          // 文件无法读取，跳过
-        }
-        files.push({
-          remotePath: item.filename.replace(remoteBaseDir + '/', ''),
-          size: item.size,
-          isEncrypted: isEnc,
-        })
-      }
-    }
-  }
+	async function walk(dir: string) {
+		const contents = await webdav.getDirectoryContents(dir)
+		for (const item of Array.isArray(contents) ? contents : [contents]) {
+			const isDir = item.type === 'directory'
+			if (isDir) {
+				await walk(item.filename)
+			} else {
+				// 只读取前 6 bytes 判断是否为加密文件
+				let isEnc = false
+				try {
+					const headerData = (await webdav.getFileContents(item.filename, {
+						format: 'binary',
+						details: false,
+					})) as BufferLike
+					const headerBuffer = bufferLikeToArrayBuffer(headerData)
+					isEnc = isEncrypted(headerBuffer)
+				} catch {
+					// 文件无法读取，跳过
+				}
+				files.push({
+					remotePath: item.filename.replace(remoteBaseDir + '/', ''),
+					size: item.size,
+					isEncrypted: isEnc,
+				})
+			}
+		}
+	}
 
-  await walk(remoteBaseDir)
-  return files
+	await walk(remoteBaseDir)
+	return files
 }
 
 /**
@@ -88,50 +88,50 @@ export async function detectRemoteFiles(
  * @param onProgress - 进度回调
  */
 export async function migrateToEncrypted(
-  webdav: WebDAVClient,
-  remoteBaseDir: string,
-  encryptionKey: CryptoKey,
-  onProgress: MigrationProgressCallback,
+	webdav: WebDAVClient,
+	remoteBaseDir: string,
+	encryptionKey: CryptoKey,
+	onProgress: MigrationProgressCallback,
 ): Promise<{ success: number; failed: number }> {
-  // 检测文件状态
-  const allFiles = await detectRemoteFiles(webdav, remoteBaseDir)
-  const plainFiles = allFiles.filter((f) => !f.isEncrypted)
+	// 检测文件状态
+	const allFiles = await detectRemoteFiles(webdav, remoteBaseDir)
+	const plainFiles = allFiles.filter((f) => !f.isEncrypted)
 
-  if (plainFiles.length === 0) {
-    return { success: 0, failed: 0 }
-  }
+	if (plainFiles.length === 0) {
+		return { success: 0, failed: 0 }
+	}
 
-  let success = 0
-  let failed = 0
+	let success = 0
+	let failed = 0
 
-  for (let i = 0; i < plainFiles.length; i++) {
-    const file = plainFiles[i]
-    onProgress(i + 1, plainFiles.length, file.remotePath)
+	for (let i = 0; i < plainFiles.length; i++) {
+		const file = plainFiles[i]
+		onProgress(i + 1, plainFiles.length, file.remotePath)
 
-    try {
-      // 下载明文
-      const content = (await webdav.getFileContents(
-        `${remoteBaseDir}/${file.remotePath}`,
-        { format: 'binary', details: false },
-      )) as BufferLike
-      const arrayBuffer = bufferLikeToArrayBuffer(content)
+		try {
+			// 下载明文
+			const content = (await webdav.getFileContents(
+				`${remoteBaseDir}/${file.remotePath}`,
+				{ format: 'binary', details: false },
+			)) as BufferLike
+			const arrayBuffer = bufferLikeToArrayBuffer(content)
 
-      // 加密
-      const encrypted = await encrypt(arrayBuffer, encryptionKey)
+			// 加密
+			const encrypted = await encrypt(arrayBuffer, encryptionKey)
 
-      // 上传密文
-      await webdav.putFileContents(
-        `${remoteBaseDir}/${file.remotePath}`,
-        encrypted,
-        { overwrite: true },
-      )
-      success++
-    } catch {
-      failed++
-    }
-  }
+			// 上传密文
+			await webdav.putFileContents(
+				`${remoteBaseDir}/${file.remotePath}`,
+				encrypted,
+				{ overwrite: true },
+			)
+			success++
+		} catch {
+			failed++
+		}
+	}
 
-  return { success, failed }
+	return { success, failed }
 }
 
 /**
@@ -148,74 +148,76 @@ export async function migrateToEncrypted(
  * @param onProgress - 进度回调
  */
 export async function reEncryptAllFiles(
-  webdav: WebDAVClient,
-  remoteBaseDir: string,
-  oldKey: CryptoKey,
-  newKey: CryptoKey,
-  onProgress: MigrationProgressCallback,
+	webdav: WebDAVClient,
+	remoteBaseDir: string,
+	oldKey: CryptoKey,
+	newKey: CryptoKey,
+	onProgress: MigrationProgressCallback,
 ): Promise<{ success: number; failed: number }> {
-  const allFiles = await detectRemoteFiles(webdav, remoteBaseDir)
-  const encryptedFiles = allFiles.filter((f) => f.isEncrypted)
+	const allFiles = await detectRemoteFiles(webdav, remoteBaseDir)
+	const encryptedFiles = allFiles.filter((f) => f.isEncrypted)
 
-  if (encryptedFiles.length === 0) {
-    return { success: 0, failed: 0 }
-  }
+	if (encryptedFiles.length === 0) {
+		return { success: 0, failed: 0 }
+	}
 
-  let success = 0
-  let failed = 0
+	let success = 0
+	let failed = 0
 
-  for (let i = 0; i < encryptedFiles.length; i++) {
-    const file = encryptedFiles[i]
-    onProgress(i + 1, encryptedFiles.length, file.remotePath)
+	for (let i = 0; i < encryptedFiles.length; i++) {
+		const file = encryptedFiles[i]
+		onProgress(i + 1, encryptedFiles.length, file.remotePath)
 
-    try {
-      // 下载密文
-      const content = (await webdav.getFileContents(
-        `${remoteBaseDir}/${file.remotePath}`,
-        { format: 'binary', details: false },
-      )) as BufferLike
-      const arrayBuffer = bufferLikeToArrayBuffer(content)
+		try {
+			// 下载密文
+			const content = (await webdav.getFileContents(
+				`${remoteBaseDir}/${file.remotePath}`,
+				{ format: 'binary', details: false },
+			)) as BufferLike
+			const arrayBuffer = bufferLikeToArrayBuffer(content)
 
-      // 用旧 key 解密
-      const plaintext = await decrypt(arrayBuffer, oldKey)
+			// 用旧 key 解密
+			const plaintext = await decrypt(arrayBuffer, oldKey)
 
-      // 用新 key 加密
-      const reEncrypted = await encrypt(plaintext, newKey)
+			// 用新 key 加密
+			const reEncrypted = await encrypt(plaintext, newKey)
 
-      // 上传
-      await webdav.putFileContents(
-        `${remoteBaseDir}/${file.remotePath}`,
-        reEncrypted,
-        { overwrite: true },
-      )
-      success++
-    } catch {
-      failed++
-    }
-  }
+			// 上传
+			await webdav.putFileContents(
+				`${remoteBaseDir}/${file.remotePath}`,
+				reEncrypted,
+				{ overwrite: true },
+			)
+			success++
+		} catch {
+			failed++
+		}
+	}
 
-  return { success, failed }
+	return { success, failed }
 }
 
 /**
  * 检查远端是否有明文文件需要迁移
  */
-export function filterPlainFiles(files: MigrationFileInfo[]): MigrationFileInfo[] {
-  return files.filter((f) => !f.isEncrypted)
+export function filterPlainFiles(
+	files: MigrationFileInfo[],
+): MigrationFileInfo[] {
+	return files.filter((f) => !f.isEncrypted)
 }
 
 function bufferLikeToArrayBuffer(buffer: BufferLike): ArrayBuffer {
-  if (buffer instanceof ArrayBuffer) {
-    return buffer
-  }
-  return toArrayBuffer(buffer as Buffer)
+	if (buffer instanceof ArrayBuffer) {
+		return buffer
+	}
+	return toArrayBuffer(buffer as Buffer)
 }
 
 function toArrayBuffer(buf: Buffer): ArrayBuffer {
-  if (buf.buffer instanceof SharedArrayBuffer) {
-    const copy = new ArrayBuffer(buf.byteLength)
-    new Uint8Array(copy).set(buf)
-    return copy
-  }
-  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+	if (buf.buffer instanceof SharedArrayBuffer) {
+		const copy = new ArrayBuffer(buf.byteLength)
+		new Uint8Array(copy).set(buf)
+		return copy
+	}
+	return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
 }

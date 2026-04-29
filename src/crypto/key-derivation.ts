@@ -20,34 +20,34 @@ const ITERATIONS = Platform.isMobileApp ? 100_000 : 600_000
  * @returns 可用于 AES-GCM 加密的 CryptoKey
  */
 export async function deriveKey(
-  password: string,
-  salt: Uint8Array,
+	password: string,
+	salt: Uint8Array,
 ): Promise<CryptoKey> {
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(password),
-    'PBKDF2',
-    false,
-    ['deriveKey'],
-  )
+	const keyMaterial = await crypto.subtle.importKey(
+		'raw',
+		new TextEncoder().encode(password),
+		'PBKDF2',
+		false,
+		['deriveKey'],
+	)
 
-  return crypto.subtle.deriveKey(
-    {
-      name: 'PBKDF2',
-      salt: salt as BufferSource,
-      iterations: ITERATIONS,
-      hash: 'SHA-256',
-    },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    true,
-    ['encrypt', 'decrypt'],
-  )
+	return crypto.subtle.deriveKey(
+		{
+			name: 'PBKDF2',
+			salt: salt as BufferSource,
+			iterations: ITERATIONS,
+			hash: 'SHA-256',
+		},
+		keyMaterial,
+		{ name: 'AES-GCM', length: 256 },
+		true,
+		['encrypt', 'decrypt'],
+	)
 }
 
 /**
  * 获取当前平台使用的 PBKDF2 迭代次数
  */
 export function getPBKDF2Iterations(): number {
-  return ITERATIONS
+	return ITERATIONS
 }

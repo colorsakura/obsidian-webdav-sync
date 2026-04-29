@@ -103,7 +103,10 @@ export class NutstoreSync {
 			)
 
 			// 加载端到端加密密钥
-			const encryptionKey = await loadEncryptionKey(this.app, this.settings.encryption)
+			const encryptionKey = await loadEncryptionKey(
+				this.app,
+				this.settings.encryption,
+			)
 
 			let remoteBaseDirExits = await webdav.exists(remoteBaseDir)
 
@@ -135,7 +138,11 @@ export class NutstoreSync {
 				}
 			}
 
-			const tasks = await new TwoWaySyncDecider(this, syncRecord, encryptionKey).decide()
+			const tasks = await new TwoWaySyncDecider(
+				this,
+				syncRecord,
+				encryptionKey,
+			).decide()
 
 			if (tasks.length === 0) {
 				emitEndSync({ showNotice, failedCount: 0 })
@@ -175,7 +182,10 @@ export class NutstoreSync {
 			}
 
 			// Check for RemoveLocalTask during auto-sync and ask for confirmation
-			if (mode === SyncStartMode.AUTO_SYNC && settings.confirmBeforeDeleteInAutoSync) {
+			if (
+				mode === SyncStartMode.AUTO_SYNC &&
+				settings.confirmBeforeDeleteInAutoSync
+			) {
 				const removeLocalTasks = confirmedTasks.filter(
 					(t) => t instanceof RemoveLocalTask,
 				) as RemoveLocalTask[]

@@ -107,13 +107,10 @@ export default class ConflictResolveTask extends BaseTask {
 				}
 			}
 			let localContent = await this.vault.adapter.readBinary(this.localPath)
-			let remoteBuffer = (await this.webdav.getFileContents(
-				this.remotePath,
-				{
-					details: false,
-					format: 'binary',
-				},
-			)) as BufferLike
+			let remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
+				details: false,
+				format: 'binary',
+			})) as BufferLike
 			let remoteContent = bufferLikeToArrayBuffer(remoteBuffer)
 
 			// 端到端解密
@@ -131,12 +128,16 @@ export default class ConflictResolveTask extends BaseTask {
 
 			switch (result.status) {
 				case LatestTimestampResolution.UseRemote:
-					await this.vault.adapter.writeBinary(this.localPath, result.content as ArrayBuffer)
+					await this.vault.adapter.writeBinary(
+						this.localPath,
+						result.content as ArrayBuffer,
+					)
 					break
 				case LatestTimestampResolution.UseLocal: {
-					let content = result.content instanceof ArrayBuffer
-						? result.content
-						: new Uint8Array(result.content).buffer
+					let content =
+						result.content instanceof ArrayBuffer
+							? result.content
+							: new Uint8Array(result.content).buffer
 					// 端到端加密（写回远端）
 					if (this.options.encryptionKey) {
 						content = await encrypt(content, this.options.encryptionKey)
@@ -225,7 +226,10 @@ export default class ConflictResolveTask extends BaseTask {
 			// 端到端加密（写回远端）
 			let uploadContent: ArrayBuffer | string = mergedText
 			if (this.options.encryptionKey) {
-				uploadContent = await encrypt(textToArrayBuffer(mergedText), this.options.encryptionKey)
+				uploadContent = await encrypt(
+					textToArrayBuffer(mergedText),
+					this.options.encryptionKey,
+				)
 			}
 
 			const putResult = await this.webdav.putFileContents(
@@ -309,7 +313,10 @@ export default class ConflictResolveTask extends BaseTask {
 				// 端到端加密（写回远端）
 				let uploadContent: ArrayBuffer | string = mergedDmpText
 				if (this.options.encryptionKey) {
-					uploadContent = await encrypt(textToArrayBuffer(mergedDmpText), this.options.encryptionKey)
+					uploadContent = await encrypt(
+						textToArrayBuffer(mergedDmpText),
+						this.options.encryptionKey,
+					)
 				}
 
 				const putResult = await this.webdav.putFileContents(
@@ -346,7 +353,10 @@ export default class ConflictResolveTask extends BaseTask {
 			// 端到端加密（写回远端）
 			let uploadContent: ArrayBuffer | string = mergedText
 			if (this.options.encryptionKey) {
-				uploadContent = await encrypt(textToArrayBuffer(mergedText), this.options.encryptionKey)
+				uploadContent = await encrypt(
+					textToArrayBuffer(mergedText),
+					this.options.encryptionKey,
+				)
 			}
 
 			const putResult = await this.webdav.putFileContents(

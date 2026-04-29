@@ -86,7 +86,11 @@ describe('mkdirsVault', () => {
 
 		await mkdirsVault(vault, 'a/b/c')
 
-		expect(mkdir.mock.calls.map(([path]) => path)).toEqual(['a', 'a/b', 'a/b/c'])
+		expect(mkdir.mock.calls.map(([path]) => path)).toEqual([
+			'a',
+			'a/b',
+			'a/b/c',
+		])
 	})
 
 	it('skips work for root-like paths and existing directories', async () => {

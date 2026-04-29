@@ -20,20 +20,20 @@ export const SECRET_ID = 'nutstore-encryption-key'
  * 将 Uint8Array 转为 hex 字符串
  */
 function buf2hex(buffer: Uint8Array): string {
-  return Array.from(buffer)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
+	return Array.from(buffer)
+		.map((b) => b.toString(16).padStart(2, '0'))
+		.join('')
 }
 
 /**
  * 将 hex 字符串转为 Uint8Array
  */
 function hex2buf(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2)
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
-  }
-  return bytes
+	const bytes = new Uint8Array(hex.length / 2)
+	for (let i = 0; i < hex.length; i += 2) {
+		bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
+	}
+	return bytes
 }
 
 /**
@@ -50,29 +50,29 @@ function hex2buf(hex: string): Uint8Array {
  * @param encryption - 可变的 encryption settings 对象
  */
 export async function setupEncryption(
-  app: App,
-  password: string,
-  encryption: EncryptionSettings,
+	app: App,
+	password: string,
+	encryption: EncryptionSettings,
 ): Promise<void> {
-  // 1. 生成随机 salt
-  const salt = crypto.getRandomValues(new Uint8Array(32))
+	// 1. 生成随机 salt
+	const salt = crypto.getRandomValues(new Uint8Array(32))
 
-  // 2. 派生密钥
-  const key = await deriveKey(password, salt)
-  const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', key))
-  const hexKey = buf2hex(rawKey)
+	// 2. 派生密钥
+	const key = await deriveKey(password, salt)
+	const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', key))
+	const hexKey = buf2hex(rawKey)
 
-  // 3. 存入 SecretStorage
-  await app.secretStorage.setSecret(SECRET_ID, hexKey)
+	// 3. 存入 SecretStorage
+	await app.secretStorage.setSecret(SECRET_ID, hexKey)
 
-  // 4. 计算 keyHash
-  const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
+	// 4. 计算 keyHash
+	const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
 
-  // 5. 更新 encryption settings
-  encryption.enabled = true
-  encryption.secretId = SECRET_ID
-  encryption.salt = fromUint8Array(salt, true)
-  encryption.keyHash = buf2hex(new Uint8Array(hash))
+	// 5. 更新 encryption settings
+	encryption.enabled = true
+	encryption.secretId = SECRET_ID
+	encryption.salt = fromUint8Array(salt, true)
+	encryption.keyHash = buf2hex(new Uint8Array(hash))
 }
 
 /**
@@ -88,36 +88,36 @@ export async function setupEncryption(
  * @returns AES-GCM CryptoKey，如果加载失败返回 null
  */
 export async function loadEncryptionKey(
-  app: App,
-  encryption: EncryptionSettings,
+	app: App,
+	encryption: EncryptionSettings,
 ): Promise<CryptoKey | null> {
-  if (!encryption.enabled) return null
+	if (!encryption.enabled) return null
 
-  try {
-    const hexKey = await app.secretStorage.getSecret(encryption.secretId)
-    if (!hexKey) return null
+	try {
+		const hexKey = await app.secretStorage.getSecret(encryption.secretId)
+		if (!hexKey) return null
 
-    const rawKey = hex2buf(hexKey)
+		const rawKey = hex2buf(hexKey)
 
-    // 验证 hash
-    const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
-    if (buf2hex(new Uint8Array(hash)) !== encryption.keyHash) {
-      console.error('[obsidian-webdav-sync] encryption key hash mismatch')
-      return null
-    }
+		// 验证 hash
+		const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
+		if (buf2hex(new Uint8Array(hash)) !== encryption.keyHash) {
+			console.error('[obsidian-webdav-sync] encryption key hash mismatch')
+			return null
+		}
 
-    // 导入 CryptoKey
-    return crypto.subtle.importKey(
-      'raw',
-      rawKey as BufferSource,
-      'AES-GCM',
-      false,
-      ['encrypt', 'decrypt'],
-    )
-  } catch (e) {
-    console.error('[obsidian-webdav-sync] failed to load encryption key:', e)
-    return null
-  }
+		// 导入 CryptoKey
+		return crypto.subtle.importKey(
+			'raw',
+			rawKey as BufferSource,
+			'AES-GCM',
+			false,
+			['encrypt', 'decrypt'],
+		)
+	} catch (e) {
+		console.error('[obsidian-webdav-sync] failed to load encryption key:', e)
+		return null
+	}
 }
 
 /**
@@ -129,17 +129,17 @@ export async function loadEncryptionKey(
  * @returns true 表示密码正确
  */
 export async function verifyPassword(
-  password: string,
-  saltBase64: string,
-  expectedKeyHash: string,
+	password: string,
+	saltBase64: string,
+	expectedKeyHash: string,
 ): Promise<boolean> {
-  try {
-    const salt = toUint8Array(saltBase64)
-    const key = await deriveKey(password, salt)
-    const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', key))
-    const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
-    return buf2hex(new Uint8Array(hash)) === expectedKeyHash
-  } catch {
-    return false
-  }
+	try {
+		const salt = toUint8Array(saltBase64)
+		const key = await deriveKey(password, salt)
+		const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', key))
+		const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
+		return buf2hex(new Uint8Array(hash)) === expectedKeyHash
+	} catch {
+		return false
+	}
 }

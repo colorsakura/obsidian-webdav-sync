@@ -90,9 +90,6 @@ export interface SyncDecisionInput {
 		baseContent: ArrayBuffer,
 	) => Promise<boolean>
 	/** 对非可合并文件比较 SHA-256 哈希值，用于内容去重 */
-	compareFileHash: (
-		filePath: string,
-		expectedHash: string,
-	) => Promise<boolean>
+	compareFileHash: (filePath: string, expectedHash: string) => Promise<boolean>
 	taskFactory: TaskFactory
 }

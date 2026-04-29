@@ -7,9 +7,7 @@ vi.mock('~/utils/get-task-name', () => ({
 	default: () => 'task',
 }))
 
-import ConflictResolveTask, {
-	ConflictStrategy,
-} from './conflict-resolve.task'
+import ConflictResolveTask, { ConflictStrategy } from './conflict-resolve.task'
 import PullTask from './pull.task'
 import PushTask from './push.task'
 
@@ -96,9 +94,13 @@ describe('PushTask', () => {
 
 		await expect(task.exec()).resolves.toEqual({ success: true })
 		expect(vault.adapter.readBinary).toHaveBeenCalledWith('file.bin')
-		expect(webdav.putFileContents).toHaveBeenCalledWith('/remote/file.bin', localBuffer, {
-			overwrite: true,
-		})
+		expect(webdav.putFileContents).toHaveBeenCalledWith(
+			'/remote/file.bin',
+			localBuffer,
+			{
+				overwrite: true,
+			},
+		)
 	})
 })
 
@@ -146,7 +148,9 @@ describe('ConflictResolveTask', () => {
 	it('uses adapter.write for merged text updates', async () => {
 		const vault = createVault()
 		vault.adapter.exists.mockResolvedValue(true)
-		vault.adapter.readBinary.mockResolvedValue(Buffer.from('hello world').buffer)
+		vault.adapter.readBinary.mockResolvedValue(
+			Buffer.from('hello world').buffer,
+		)
 		const webdav = createWebdav()
 		webdav.getFileContents.mockResolvedValue(Buffer.from('hello brave world'))
 		webdav.putFileContents.mockResolvedValue(true)

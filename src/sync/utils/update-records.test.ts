@@ -7,34 +7,33 @@ vi.mock('~/utils/get-task-name', () => ({
 
 import { updateMtimeInRecord } from './update-records'
 
-const {
-	records,
-	setRecords,
-	getRecords,
-	walk,
-	blobStoreStore,
-} = vi.hoisted(() => {
-	const records = new Map<string, unknown>()
-	return {
-		records,
-		setRecords: vi.fn(async () => undefined),
-		getRecords: vi.fn(async () => records),
-		walk: vi.fn(async () => [
-			{
-				stat: {
-					path: 'folder/file.md',
-					basename: 'file.md',
-					isDir: false,
-					isDeleted: false,
-					mtime: 20,
-					size: 10,
+const { records, setRecords, getRecords, walk, blobStoreStore } = vi.hoisted(
+	() => {
+		const records = new Map<string, unknown>()
+		return {
+			records,
+			setRecords: vi.fn(async () => undefined),
+			getRecords: vi.fn(async () => records),
+			walk: vi.fn(async () => [
+				{
+					stat: {
+						path: 'folder/file.md',
+						basename: 'file.md',
+						isDir: false,
+						isDeleted: false,
+						mtime: 20,
+						size: 10,
+					},
+					ignored: false,
 				},
-				ignored: false,
-			},
-		]),
-		blobStoreStore: vi.fn(async () => ({ key: 'blob-key', value: undefined })),
-	}
-})
+			]),
+			blobStoreStore: vi.fn(async () => ({
+				key: 'blob-key',
+				value: undefined,
+			})),
+		}
+	},
+)
 
 vi.mock('~/storage/sync-record', () => {
 	return {
