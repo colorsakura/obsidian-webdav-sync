@@ -1,6 +1,8 @@
 import { chunk, debounce, isNil } from 'lodash-es'
 import { Vault } from 'obsidian'
 import { emitSyncUpdateMtimeProgress } from '~/events'
+import { StatModel } from '~/model/stat.model'
+import type { FsWalkResult } from '~/fs/fs.interface'
 import { WebDAVRemoteFileSystem } from '~/fs/webdav-remote'
 import { syncRecordKV } from '~/storage'
 import { blobStore } from '~/storage/blob'
@@ -27,6 +29,7 @@ export async function updateMtimeInRecord(
 	tasks: BaseTask[],
 	results: TaskResult[],
 	batch_size: number,
+	options?: { skipRemoteWalk?: boolean },
 ): Promise<void> {
 	if (tasks.length === 0) {
 		return
@@ -40,6 +43,12 @@ export async function updateMtimeInRecord(
 		return
 	}
 
+	const syncRecord = new SyncRecord(
+		getDBKey(vault.getName(), remoteBaseDir),
+		syncRecordKV,
+	)
+	const records = await syncRecord.getRecords()
+
 	const token = await plugin.getToken()
 	const remoteFs = new WebDAVRemoteFileSystem({
 		vault,
@@ -48,18 +57,38 @@ export async function updateMtimeInRecord(
 		endpoint: plugin.settings.webdavEndpoint,
 	})
 
-	// 清除缓存以获取最新的远程文件状态（包括刚刚推送的文件）
-	await remoteFs.clearTraversalCache()
+	let remoteEntityMap: Map<string, FsWalkResult>
 
-	const latestRemoteEntities = await remoteFs.walk()
-	const remoteEntityMap = new Map(
-		latestRemoteEntities.map((e) => [e.stat.path, e]),
-	)
-	const syncRecord = new SyncRecord(
-		getDBKey(vault.getName(), remoteBaseDir),
-		syncRecordKV,
-	)
-	const records = await syncRecord.getRecords()
+	if (options?.skipRemoteWalk) {
+		// 哨兵匹配时：从已执行成功的 task 和已有 records 推断远端状态
+		const remoteStats = new Map<string, StatModel>()
+		for (const task of tasksNeedingUpdate) {
+			const result = results[tasks.indexOf(task)]
+			if (result?.success) {
+				const localStat = await statVaultItem(vault, task.localPath)
+				if (localStat) {
+					remoteStats.set(task.localPath, localStat)
+				}
+			}
+		}
+		for (const [path, record] of records) {
+			if (!remoteStats.has(path) && !record.remote.isDeleted) {
+				remoteStats.set(path, record.remote)
+			}
+		}
+		remoteEntityMap = new Map(
+			Array.from(remoteStats.entries()).map(([path, stat]) => [
+				path,
+				{ stat, ignored: false },
+			]),
+		)
+	} else {
+		await remoteFs.clearTraversalCache()
+		const latestRemoteEntities = await remoteFs.walk()
+		remoteEntityMap = new Map(
+			latestRemoteEntities.map((e) => [e.stat.path, e]),
+		)
+	}
 	const startAt = Date.now()
 	let completedCount = 0
 	let successfulTasksCount = 0

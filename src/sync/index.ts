@@ -21,8 +21,10 @@ import { WebDAVRemoteFileSystem } from '~/fs/webdav-remote'
 import i18n from '~/i18n'
 import { syncRecordKV } from '~/storage'
 import { SyncRecord } from '~/storage/sync-record'
+import { getSentinel, setSentinel } from '~/storage/sentinel'
 import breakableSleep from '~/utils/breakable-sleep'
 import { getDBKey } from '~/utils/get-db-key'
+import { computeRemoteFingerprint } from '~/utils/remote-fingerprint'
 import getTaskName from '~/utils/get-task-name'
 import { is503Error } from '~/utils/is-503-error'
 import logger from '~/utils/logger'
@@ -561,14 +563,31 @@ export class NutstoreSync {
 	}
 
 	async updateMtimeInRecord(tasks: BaseTask[], results: TaskResult[]) {
-		return updateMtimeInRecordUtil(
+		// 检查哨兵是否匹配，匹配则跳过远端遍历
+		const namespace = getDBKey(this.vault.getName(), this.remoteBaseDir)
+		const sentinel = await getSentinel(namespace)
+		const currentFingerprint = await computeRemoteFingerprint(
+			this.token,
+			this.endpoint,
+			this.remoteBaseDir,
+		)
+		const skipRemoteWalk = sentinel !== null && sentinel.fingerprint === currentFingerprint
+
+		await updateMtimeInRecordUtil(
 			this.plugin,
 			this.vault,
 			this.remoteBaseDir,
 			tasks,
 			results,
 			10,
+			{ skipRemoteWalk },
 		)
+
+		// 缓存哨兵（在所有任务成功执行 + records 更新后）
+		await setSentinel(namespace, {
+			fingerprint: currentFingerprint,
+			updatedAt: Date.now(),
+		})
 	}
 
 	private async handle503Error(waitMs: number) {

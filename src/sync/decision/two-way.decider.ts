@@ -24,7 +24,7 @@ import {
 } from './sync-decision.interface'
 import { twoWayDecider } from './two-way.decider.function'
 import { getDBKey } from '~/utils/get-db-key'
-import { getSentinel, setSentinel } from '~/storage/sentinel'
+import { getSentinel } from '~/storage/sentinel'
 import { buildRemoteStatsFromRecords, computeRemoteFingerprint } from '~/utils/remote-fingerprint'
 import completeLossDir from '~/fs/utils/complete-loss-dir'
 
@@ -66,12 +66,6 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 			// 哨兵不匹配（首次同步 / 远端有变化）→ 全量遍历
 			remoteStats = await this.sync.remoteFs.walk()
 		}
-
-		// 缓存新指纹（无论匹配与否）
-		await setSentinel(namespace, {
-			fingerprint: currentFingerprint,
-			updatedAt: Date.now(),
-		})
 
 		// 创建共用的task选项
 		const commonTaskOptions = {
