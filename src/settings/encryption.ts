@@ -469,7 +469,7 @@ async function showLocalRepairModal(
 		modal.titleEl.setText('修复本地加密文件')
 
 		const contentEl = modal.contentEl
-		contentEl.createEl('p', {
+		const scanningEl = contentEl.createEl('p', {
 			text: '正在扫描本地文件...',
 			cls: 'nutstore-migration-scanning',
 		})
@@ -478,10 +478,17 @@ async function showLocalRepairModal(
 			const encryptedFiles: string[] = []
 
 			async function scan(dir: string) {
-				const { folders, files } = await vault.adapter.list(dir)
+				let list
+				try {
+					list = await vault.adapter.list(dir)
+				} catch {
+					return
+				}
+				const { folders, files } = list
 				for (const file of files) {
 					if (file.startsWith('.')) continue
 					const path = dir ? `${dir}/${file}` : file
+					scanningEl.setText(`正在扫描: ${path}`)
 					try {
 						const data = await vault.adapter.readBinary(path)
 						const header = new Uint8Array(data, 0, 6)
@@ -490,7 +497,7 @@ async function showLocalRepairModal(
 							encryptedFiles.push(path)
 						}
 					} catch {
-						// 跳过
+						// 跳过无法读取的文件
 					}
 				}
 				for (const folder of folders) {
