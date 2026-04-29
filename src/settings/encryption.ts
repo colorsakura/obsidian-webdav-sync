@@ -15,9 +15,9 @@ import { EncryptionMigrationModal } from '~/components/EncryptionMigrationModal'
 import {
 	getPBKDF2Iterations,
 	loadEncryptionKey,
-	restoreEncryption,
 	setupEncryption,
 	verifyPassword,
+	showRestoreKeyModal,
 } from '~/crypto'
 import type { NutstoreSettingTab } from './index'
 import BaseSettings from './settings.base'
@@ -344,88 +344,21 @@ async function showPasswordChangeModal(
 }
 
 /**
- * 密码恢复 Modal
+ * 密码恢复 Modal（设置页面入口）
  *
- * 用于新设备场景：SecretStorage 中缺少密钥时，
- * 用户输入密码从已有 salt 恢复密钥。
+ * 使用共用的 showRestoreKeyModal，成功后显示提示并刷新页面。
  */
 async function showPasswordRestoreModal(
 	app: App,
 	plugin: NutstorePlugin,
 ): Promise<void> {
-	return new Promise((resolve) => {
-		const modal = new Modal(app)
-		modal.titleEl.setText('恢复加密密钥')
-
-		const contentEl = modal.contentEl
-
-		contentEl.createEl('p', {
-			text: '请输入您的加密密码。密钥将从本地配置中的 salt 恢复，不会更改加密设置。',
-		})
-
-		let passwordInput: HTMLInputElement
-		let errorEl: HTMLElement
-
-		new Setting(contentEl).setName('密码').addText((text) => {
-			text.inputEl.type = 'password'
-			text.inputEl.placeholder = '输入加密密码'
-			passwordInput = text.inputEl
-		})
-
-		errorEl = contentEl.createDiv({ cls: 'nutstore-encryption-error' })
-		errorEl.style.color = 'var(--text-error)'
-		errorEl.style.display = 'none'
-
-		new Setting(contentEl).addButton((btn) =>
-			btn.setButtonText('取消').onClick(() => {
-				modal.close()
-				resolve()
-			}),
-		)
-
-		new Setting(contentEl).addButton((btn) => {
-			btn
-				.setButtonText('恢复密钥')
-				.setCta()
-				.onClick(async () => {
-					const password = passwordInput.value
-
-					if (!password) {
-						errorEl.setText('请输入密码')
-						errorEl.style.display = 'block'
-						return
-					}
-
-					btn.setDisabled(true)
-					btn.setButtonText('正在恢复密钥...')
-
-					try {
-						const success = await restoreEncryption(
-							app,
-							password,
-							plugin.settings.encryption,
-						)
-
-						if (!success) {
-							errorEl.setText('密码错误，请重试')
-							errorEl.style.display = 'block'
-							btn.setDisabled(false)
-							btn.setButtonText('恢复密钥')
-							return
-						}
-
-						new Notice('密钥已成功恢复', 5000)
-						modal.close()
-						resolve()
-					} catch (e) {
-						errorEl.setText('密钥恢复失败: ' + String(e))
-						errorEl.style.display = 'block'
-						btn.setDisabled(false)
-						btn.setButtonText('恢复密钥')
-					}
-				})
-		})
-
-		modal.open()
-	})
+	const password = await showRestoreKeyModal(
+		app,
+		plugin.settings.encryption,
+		'恢复加密密钥',
+		'请输入您的加密密码。密钥将从本地配置中的 salt 恢复，不会更改加密设置。',
+	)
+	if (password) {
+		new Notice('密钥已成功恢复', 5000)
+	}
 }
