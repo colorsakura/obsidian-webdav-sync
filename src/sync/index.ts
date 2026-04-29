@@ -6,7 +6,7 @@ import { WebDAVClient } from 'webdav'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal'
 import FailedTasksModal, { FailedTaskInfo } from '~/components/FailedTasksModal'
 import TaskListConfirmModal from '~/components/TaskListConfirmModal'
-import { loadEncryptionKey } from '~/crypto'
+import { loadEncryptionKey, sampleRemoteEncryption, showRestoreKeyModal } from '~/crypto'
 import {
 	emitEndSync,
 	emitPreparingSync,
@@ -105,16 +105,51 @@ export class NutstoreSync {
 			)
 
 			// 加载端到端加密密钥
-			const encryptionKey = await loadEncryptionKey(
+			let encryptionKey = await loadEncryptionKey(
 				this.app,
 				this.settings.encryption,
 			)
 
-			if (this.settings.encryption.enabled && !encryptionKey) {
-				new Notice(
-					'加密密钥未找到，请在设置 → 加密中恢复密钥',
-					8000,
-				)
+			if (!encryptionKey) {
+				// 新设备检测：无同步记录 + 远程加密 → 弹出密码恢复 Modal
+				const records = await syncRecord.getRecords()
+				if (records.size === 0) {
+					try {
+						const remoteEncrypted = await sampleRemoteEncryption(
+							webdav,
+							remoteBaseDir,
+						)
+						if (remoteEncrypted) {
+							const password = await showRestoreKeyModal(
+								this.app,
+								this.settings.encryption,
+								'检测到远程数据已加密',
+								'远程文件已使用端到端加密。请输入密码恢复密钥以继续同步。',
+							)
+							if (!password) {
+								// 用户取消，中止同步
+								emitSyncError(new Error(i18n.t('sync.cancelled')))
+								return
+							}
+							// 启用加密并保存设置
+							this.settings.encryption.enabled = true
+							await this.plugin.saveSettings()
+							// 重新加载密钥
+							encryptionKey = await loadEncryptionKey(
+								this.app,
+								this.settings.encryption,
+							)
+						}
+					} catch {
+						// 采样失败不阻塞同步
+					}
+				} else if (this.settings.encryption.enabled) {
+					// 旧设备但密钥缺失：显示提示（保持原有行为）
+					new Notice(
+						'加密密钥未找到，请在设置 → 加密中恢复密钥',
+						8000,
+					)
+				}
 			}
 
 			let remoteBaseDirExits = await webdav.exists(remoteBaseDir)
