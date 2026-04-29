@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## AGENTS.md 规则
+## 规则
 
 - 必须用中文回复和思考
 - 优先使用 bun 功能
