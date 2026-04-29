@@ -23,6 +23,10 @@ import {
 	TaskOptions,
 } from './sync-decision.interface'
 import { twoWayDecider } from './two-way.decider.function'
+import { getDBKey } from '~/utils/get-db-key'
+import { getSentinel, setSentinel } from '~/storage/sentinel'
+import { buildRemoteStatsFromRecords, computeRemoteFingerprint } from '~/utils/remote-fingerprint'
+import completeLossDir from '~/fs/utils/complete-loss-dir'
 
 export default class TwoWaySyncDecider extends BaseSyncDecider {
 	constructor(
@@ -35,11 +39,39 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 
 	async decide(): Promise<BaseTask[]> {
 		const syncRecordStorage = this.getSyncRecordStorage()
-		const [records, localStats, remoteStats] = await Promise.all([
+
+		// 并行获取 records + localStats（不包含 remote walk）
+		const [records, localStats] = await Promise.all([
 			syncRecordStorage.getRecords(),
 			this.sync.localFS.walk(),
-			this.sync.remoteFs.walk(),
 		])
+
+		// 哨兵检测：1 次 PROPFIND 判断远端顶层是否变化
+		const namespace = getDBKey(this.vault.getName(), this.remoteBaseDir)
+		const cachedSentinel = await getSentinel(namespace)
+		const currentFingerprint = await computeRemoteFingerprint(
+			this.sync.token,
+			this.sync.endpoint,
+			this.remoteBaseDir,
+		)
+
+		let remoteStats
+
+		if (cachedSentinel && cachedSentinel.fingerprint === currentFingerprint) {
+			// 哨兵匹配 → 从 sync record 推断远端状态，跳过全量遍历
+			const statModels = buildRemoteStatsFromRecords(records)
+			const completedStats = completeLossDir(statModels, statModels)
+			remoteStats = completedStats.map((stat) => ({ stat, ignored: false }))
+		} else {
+			// 哨兵不匹配（首次同步 / 远端有变化）→ 全量遍历
+			remoteStats = await this.sync.remoteFs.walk()
+		}
+
+		// 缓存新指纹（无论匹配与否）
+		await setSentinel(namespace, {
+			fingerprint: currentFingerprint,
+			updatedAt: Date.now(),
+		})
 
 		// 创建共用的task选项
 		const commonTaskOptions = {
