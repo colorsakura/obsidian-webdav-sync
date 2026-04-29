@@ -25,6 +25,8 @@ export {
 	migrateToEncrypted,
 	reEncryptAllFiles,
 	filterPlainFiles,
+	sampleRemoteEncryption,
 } from './migration'
+export { showRestoreKeyModal } from './password-modal'
 export type { MigrationFileInfo, MigrationProgressCallback } from './migration'
 export type { EncryptionSettings, FileHeader } from './types'
