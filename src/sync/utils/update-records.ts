@@ -65,9 +65,19 @@ export async function updateMtimeInRecord(
 		for (const task of tasksNeedingUpdate) {
 			const result = results[tasks.indexOf(task)]
 			if (result?.success) {
-				const localStat = await statVaultItem(vault, task.localPath)
-				if (localStat) {
-					remoteStats.set(task.localPath, localStat)
+				if (task instanceof MkdirsRemoteTask) {
+					// MkdirsRemoteTask 创建了多个父子目录，需全部记录
+					for (const pathInfo of task.getAllPaths()) {
+						const localStat = await statVaultItem(vault, pathInfo.localPath)
+						if (localStat) {
+							remoteStats.set(pathInfo.localPath, localStat)
+						}
+					}
+				} else {
+					const localStat = await statVaultItem(vault, task.localPath)
+					if (localStat) {
+						remoteStats.set(task.localPath, localStat)
+					}
 				}
 			}
 		}

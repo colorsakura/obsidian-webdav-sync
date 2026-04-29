@@ -147,6 +147,17 @@ export class NutstoreSync {
 			).decide()
 
 			if (tasks.length === 0) {
+				// 缓存哨兵，下次同步可跳过远程遍历
+				const namespace = getDBKey(this.vault.getName(), this.remoteBaseDir)
+				const fingerprint = await computeRemoteFingerprint(
+					this.token,
+					this.endpoint,
+					this.remoteBaseDir,
+				)
+				await setSentinel(namespace, {
+					fingerprint,
+					updatedAt: Date.now(),
+				})
 				emitEndSync({ showNotice, failedCount: 0 })
 				return
 			}
