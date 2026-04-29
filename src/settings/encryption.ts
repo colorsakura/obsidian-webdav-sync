@@ -17,6 +17,7 @@ import {
 	loadEncryptionKey,
 	setupEncryption,
 	verifyPassword,
+	repairLocalEncryptedFiles,
 	showRestoreKeyModal,
 } from '~/crypto'
 import type { NutstoreSettingTab } from './index'
@@ -158,6 +159,18 @@ export default class EncryptionSettingsTab extends BaseSettings {
 				.addButton((btn) =>
 					btn.setButtonText('开始迁移').onClick(async () => {
 						await showMigrationModal(this.app, plugin)
+						}),
+					)
+
+				new Setting(containerEl)
+					.setName('修复本地加密文件')
+					.setDesc(
+						'扫描本地文件，解密因密钥缺失而残留的密文数据。仅在本地出现异常加密文件时使用。',
+					)
+					.addButton((btn) =>
+						btn.setButtonText('开始修复').onClick(async () => {
+							await showLocalRepairModal(this.app, plugin)
+							this.display()
 					}),
 				)
 
@@ -435,14 +448,155 @@ async function showEncryptionSetupChoiceModal(
 
 		new Setting(contentEl).addButton((btn) =>
 			btn.setButtonText('从已有加密恢复').onClick(() => {
-				modal.close()
-				resolve('restore')
-			}),
-		)
+					modal.close()
+					resolve('restore')
+				}),
+			)
 
-		modal.open()
-	})
-}
+			modal.open()
+		})
+	}
+
+	/**
+	 * 本地加密文件修复 Modal
+	 *
+	 * 扫描本地 vault 文件，检测并解密因密钥缺失残留在本地的密文数据。
+	 */
+	async function showLocalRepairModal(
+		app: App,
+		plugin: NutstorePlugin,
+	): Promise<void> {
+		const key = await loadEncryptionKey(app, plugin.settings.encryption)
+		if (!key) {
+			new Notice('无法加载加密密钥', 5000)
+			return
+		}
+
+		return new Promise((resolve) => {
+			const modal = new Modal(app)
+			modal.titleEl.setText('修复本地加密文件')
+
+			const contentEl = modal.contentEl
+			contentEl.createEl('p', {
+				text: '正在扫描本地文件...',
+				cls: 'nutstore-migration-scanning',
+			})
+
+			;(async () => {
+				const vault = plugin.app.vault
+				const encryptedFiles: string[] = []
+
+				async function scan(dir: string) {
+					const { folders, files } = await vault.adapter.list(dir)
+					for (const file of files) {
+						if (file.startsWith('.')) continue
+						const path = dir ? `${dir}/${file}` : file
+						try {
+							const data = await vault.adapter.readBinary(path)
+							const header = new Uint8Array(data, 0, 6)
+							const magic = new TextEncoder().encode('OBSENC')
+							if (header.every((b, i) => b === magic[i])) {
+								encryptedFiles.push(path)
+							}
+						} catch {
+							// 跳过
+						}
+					}
+					for (const folder of folders) {
+						if (folder.startsWith('.')) continue
+						await scan(dir ? `${dir}/${folder}` : folder)
+					}
+				}
+				await scan('')
+
+				contentEl.empty()
+
+				if (encryptedFiles.length === 0) {
+					contentEl.createEl('p', {
+						text: '✅ 未发现本地加密文件，无需修复。',
+					})
+					new Setting(contentEl).addButton((btn) =>
+						btn.setButtonText('关闭').onClick(() => {
+							modal.close()
+							resolve()
+						}),
+					)
+					return
+				}
+
+				contentEl.createEl('p', {
+					text: `发现 ${encryptedFiles.length} 个本地加密文件需要修复:`,
+				})
+				const listEl = contentEl.createEl('ul')
+				for (const f of encryptedFiles) {
+					listEl.createEl('li', { text: f })
+				}
+
+				const progressEl = contentEl.createDiv({
+					cls: 'nutstore-migration-progress',
+				})
+				const progressBar = progressEl.createEl('div', {
+					cls: 'nutstore-migration-progress-bar',
+				})
+				const progressText = progressEl.createEl('span', {
+					cls: 'nutstore-migration-progress-text',
+				})
+
+				let isRunning = false
+
+				new Setting(contentEl)
+					.addButton((btn) =>
+						btn
+							.setButtonText('开始修复')
+							.setCta()
+							.onClick(async () => {
+								if (isRunning) return
+								isRunning = true
+								btn.setDisabled(true)
+								btn.setButtonText('修复中...')
+
+								progressBar.style.width = '0%'
+								progressText.setText(`0 / ${encryptedFiles.length}`)
+
+								const result = await repairLocalEncryptedFiles(
+									vault,
+									key,
+									(current, total) => {
+										const pct = Math.round((current / total) * 100)
+										progressBar.style.width = `${pct}%`
+										progressText.setText(`${current} / ${total}`)
+									},
+								)
+
+								contentEl.empty()
+								contentEl.createEl('p', {
+									text: `修复完成: 成功 ${result.success} 个, 失败 ${result.failed} 个, 扫描 ${result.scanned} 个`,
+								})
+								if (result.failed === 0) {
+									contentEl.createEl('p', {
+										text: '✅ 所有加密文件已解密。',
+									})
+								}
+								new Setting(contentEl).addButton((btn2) =>
+									btn2.setButtonText('关闭').onClick(() => {
+										modal.close()
+										resolve()
+									}),
+								)
+							}),
+					)
+					.addButton((btn) =>
+						btn.setButtonText('取消').onClick(() => {
+							modal.close()
+							resolve()
+						}),
+					)
+
+				modal.open()
+			})()
+		})
+	}
+
 
 /**
  * 密码恢复 Modal（设置页面入口）

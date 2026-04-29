@@ -4,7 +4,7 @@
  * 处理明文 → 密文的迁移，以及密码修改后的重加密
  */
 
-import { App, Notice } from 'obsidian'
+import { App, Notice, Vault } from 'obsidian'
 import { WebDAVClient, BufferLike } from 'webdav'
 import { decrypt, encrypt } from './cipher'
 import { isEncrypted } from './file-header'
@@ -269,4 +269,61 @@ function toArrayBuffer(buf: Buffer): ArrayBuffer {
 		return copy
 	}
 	return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+}
+
+/**
+ * 修复本地异常加密文件
+ *
+ * 当密钥缺失导致 PullTask 未解密就写入本地时，本地文件可能残留
+ * OBSENC 密文数据。此函数遍历本地 vault 文件，对检测到加密头的
+ * 文件用密钥解密后覆盖。非加密文件（decrypt 透传）不受影响。
+ *
+ * @param vault - Obsidian Vault 实例
+ * @param encryptionKey - 加密密钥
+ * @param onProgress - 进度回调 (current, total, filePath)
+ * @returns 修复统计
+ */
+export async function repairLocalEncryptedFiles(
+	vault: Vault,
+	encryptionKey: CryptoKey,
+	onProgress?: (current: number, total: number, filePath: string) => void,
+): Promise<{ success: number; failed: number; scanned: number }> {
+	const allFiles = await walkLocalFiles(vault)
+	let success = 0
+	let failed = 0
+	let scanned = 0
+
+	for (let i = 0; i < allFiles.length; i++) {
+		const filePath = allFiles[i]
+		onProgress?.(i + 1, allFiles.length, filePath)
+
+		try {
+			const data = await vault.adapter.readBinary(filePath)
+			const decrypted = await decrypt(data, encryptionKey)
+			if (data.byteLength !== decrypted.byteLength) {
+				await vault.adapter.writeBinary(filePath, decrypted)
+				success++
+			}
+			scanned++
+		} catch {
+			failed++
+		}
+	}
+
+	return { success, failed, scanned }
+}
+
+async function walkLocalFiles(vault: Vault, dir = ''): Promise<string[]> {
+	const files: string[] = []
+	const { folders, files: dirFiles } = await vault.adapter.list(dir)
+	for (const file of dirFiles) {
+		if (file.startsWith('.')) continue
+		files.push(dir ? `${dir}/${file}` : file)
+	}
+	for (const folder of folders) {
+		if (folder.startsWith('.')) continue
+		const subDir = dir ? `${dir}/${folder}` : folder
+		files.push(...(await walkLocalFiles(vault, subDir)))
+	}
+	return files
 }
