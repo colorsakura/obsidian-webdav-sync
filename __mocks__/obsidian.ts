@@ -68,6 +68,17 @@ export const moment = (date?: any) => ({
   format: (fmt: string) => '',
 })
 
+export function requestUrl(req: any): Promise<any> {
+  return Promise.resolve({
+    status: 200,
+    text: '',
+    headers: {},
+  })
+}
+
+export type RequestUrlParam = any
+export type RequestUrlResponse = any
+
 export interface Vault {
   adapter: any
   getName(): string
