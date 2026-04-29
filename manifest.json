@@ -2,9 +2,9 @@
 	"id": "obsidian-webdav-sync",
 	"name": "WebDAV Sync",
 	"version": "2.0.0",
-	"minAppVersion": "0.15.0",
+	"minAppVersion": "1.12.0",
 	"description": "Sync your vault with any WebDAV server.",
 	"author": "obsidian-webdav-sync",
-	"authorUrl": "https://github.com/nutstore",
+	"authorUrl": "https://github.com/colorsakura",
 	"isDesktopOnly": false
 }
