@@ -110,6 +110,13 @@ export class NutstoreSync {
 				this.settings.encryption,
 			)
 
+			if (this.settings.encryption.enabled && !encryptionKey) {
+				new Notice(
+					'加密密钥未找到，请在设置 → 加密中恢复密钥',
+					8000,
+				)
+			}
+
 			let remoteBaseDirExits = await webdav.exists(remoteBaseDir)
 
 			if (!remoteBaseDirExits) {

@@ -17,6 +17,7 @@ export {
 	setupEncryption,
 	loadEncryptionKey,
 	verifyPassword,
+	restoreEncryption,
 	SECRET_ID,
 } from './key-store'
 export {

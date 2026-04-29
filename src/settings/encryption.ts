@@ -6,6 +6,7 @@
  * - 密码设置/修改
  * - 明文→密文迁移
  * - 密码警告提示
+ * - 新设备密钥恢复
  */
 
 import { App, Modal, Notice, Platform, Setting } from 'obsidian'
@@ -14,6 +15,7 @@ import { EncryptionMigrationModal } from '~/components/EncryptionMigrationModal'
 import {
 	getPBKDF2Iterations,
 	loadEncryptionKey,
+	restoreEncryption,
 	setupEncryption,
 	verifyPassword,
 } from '~/crypto'
@@ -21,7 +23,7 @@ import type { NutstoreSettingTab } from './index'
 import BaseSettings from './settings.base'
 
 export default class EncryptionSettingsTab extends BaseSettings {
-	display(): void {
+	async display(): Promise<void> {
 		const { containerEl, plugin } = this
 
 		containerEl.empty()
@@ -60,6 +62,32 @@ export default class EncryptionSettingsTab extends BaseSettings {
 			)
 
 		if (plugin.settings.encryption.enabled) {
+			const key = await loadEncryptionKey(this.app, plugin.settings.encryption)
+
+			if (!key) {
+				// 密钥不可用：显示恢复 UI
+				const keyMissingEl = containerEl.createDiv({
+					cls: 'nutstore-encryption-warning',
+				})
+				keyMissingEl.createEl('p', {
+					text: '⚠️ 加密密钥未找到。您可能在新设备上使用插件，或密钥已被清除。',
+				})
+				keyMissingEl.createEl('p', {
+					text: '请输入加密密码以恢复密钥。',
+				})
+
+				new Setting(containerEl)
+					.setName('恢复密钥')
+					.setDesc('输入密码从已有的 salt 恢复加密密钥，不会更改加密配置。')
+					.addButton((btn) =>
+						btn.setButtonText('恢复密钥').setCta().onClick(async () => {
+							await showPasswordRestoreModal(this.app, plugin)
+							this.display()
+						}),
+					)
+				return
+			}
+
 			const iterations = getPBKDF2Iterations()
 			new Setting(containerEl)
 				.setName('加密状态')
@@ -307,6 +335,93 @@ async function showPasswordChangeModal(
 						errorEl.style.display = 'block'
 						btn.setDisabled(false)
 						btn.setButtonText('确认修改')
+					}
+				})
+		})
+
+		modal.open()
+	})
+}
+
+/**
+ * 密码恢复 Modal
+ *
+ * 用于新设备场景：SecretStorage 中缺少密钥时，
+ * 用户输入密码从已有 salt 恢复密钥。
+ */
+async function showPasswordRestoreModal(
+	app: App,
+	plugin: NutstorePlugin,
+): Promise<void> {
+	return new Promise((resolve) => {
+		const modal = new Modal(app)
+		modal.titleEl.setText('恢复加密密钥')
+
+		const contentEl = modal.contentEl
+
+		contentEl.createEl('p', {
+			text: '请输入您的加密密码。密钥将从本地配置中的 salt 恢复，不会更改加密设置。',
+		})
+
+		let passwordInput: HTMLInputElement
+		let errorEl: HTMLElement
+
+		new Setting(contentEl).setName('密码').addText((text) => {
+			text.inputEl.type = 'password'
+			text.inputEl.placeholder = '输入加密密码'
+			passwordInput = text.inputEl
+		})
+
+		errorEl = contentEl.createDiv({ cls: 'nutstore-encryption-error' })
+		errorEl.style.color = 'var(--text-error)'
+		errorEl.style.display = 'none'
+
+		new Setting(contentEl).addButton((btn) =>
+			btn.setButtonText('取消').onClick(() => {
+				modal.close()
+				resolve()
+			}),
+		)
+
+		new Setting(contentEl).addButton((btn) => {
+			btn
+				.setButtonText('恢复密钥')
+				.setCta()
+				.onClick(async () => {
+					const password = passwordInput.value
+
+					if (!password) {
+						errorEl.setText('请输入密码')
+						errorEl.style.display = 'block'
+						return
+					}
+
+					btn.setDisabled(true)
+					btn.setButtonText('正在恢复密钥...')
+
+					try {
+						const success = await restoreEncryption(
+							app,
+							password,
+							plugin.settings.encryption,
+						)
+
+						if (!success) {
+							errorEl.setText('密码错误，请重试')
+							errorEl.style.display = 'block'
+							btn.setDisabled(false)
+							btn.setButtonText('恢复密钥')
+							return
+						}
+
+						new Notice('密钥已成功恢复', 5000)
+						modal.close()
+						resolve()
+					} catch (e) {
+						errorEl.setText('密钥恢复失败: ' + String(e))
+						errorEl.style.display = 'block'
+						btn.setDisabled(false)
+						btn.setButtonText('恢复密钥')
 					}
 				})
 		})

@@ -143,3 +143,34 @@ export async function verifyPassword(
 		return false
 	}
 }
+
+/**
+ * 从密码恢复加密密钥
+ *
+ * 用于新设备场景：settings 中有 salt + keyHash，
+ * 但 SecretStorage 中没有密钥。用户输入密码后重新派生
+ * 密钥并存入 SecretStorage，不改变 salt。
+ *
+ * @param app - Obsidian App 实例
+ * @param password - 用户输入的密码
+ * @param encryption - 已有的 encryption settings（含 salt 和 keyHash）
+ * @returns true 表示恢复成功，false 表示密码错误
+ */
+export async function restoreEncryption(
+	app: App,
+	password: string,
+	encryption: EncryptionSettings,
+): Promise<boolean> {
+	const salt = toUint8Array(encryption.salt)
+	const key = await deriveKey(password, salt)
+	const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', key))
+
+	const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
+	if (buf2hex(new Uint8Array(hash)) !== encryption.keyHash) {
+		return false
+	}
+
+	const hexKey = buf2hex(rawKey)
+	await app.secretStorage.setSecret(SECRET_ID, hexKey)
+	return true
+}
