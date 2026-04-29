@@ -115,7 +115,42 @@ export default class EncryptionSettingsTab extends BaseSettings {
 			const iterations = getPBKDF2Iterations()
 			new Setting(containerEl)
 				.setName('加密状态')
-				.setDesc(`已启用 (PBKDF2 迭代次数: ${iterations.toLocaleString()})`)
+				.setDesc(
+						`已启用 (PBKDF2 迭代次数: ${iterations.toLocaleString()})`,
+					)
+
+				// Salt + KeyHash 展示（用于迁移到新设备）
+				const saltValue = plugin.settings.encryption.salt
+				const keyHashValue = plugin.settings.encryption.keyHash
+				new Setting(containerEl)
+					.setName('Salt（用于新设备恢复）')
+					.setDesc(saltValue || '未设置')
+					.addButton((btn) =>
+						btn
+							.setButtonText('复制 salt')
+							.setCta()
+							.onClick(async () => {
+								await navigator.clipboard.writeText(saltValue)
+								new Notice('salt 已复制到剪贴板', 3000)
+							}),
+					)
+
+				new Setting(containerEl)
+					.setName('Key Hash')
+					.setDesc(keyHashValue || '未设置')
+					.addButton((btn) =>
+						btn
+							.setButtonText('复制 keyHash')
+							.onClick(async () => {
+								await navigator.clipboard.writeText(
+									keyHashValue,
+								)
+								new Notice(
+									'keyHash 已复制到剪贴板',
+									3000,
+								)
+							}),
+					)
 
 			new Setting(containerEl)
 				.setName('迁移现有文件')

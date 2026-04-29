@@ -24,12 +24,54 @@ export function showRestoreKeyModal(
 
         let passwordInput: HTMLInputElement
         let errorEl: HTMLElement
+        let saltInput: HTMLInputElement | undefined
+        let keyHashInput: HTMLInputElement | undefined
+        let advancedEl: HTMLElement | undefined
 
         new Setting(contentEl).setName('密码').addText((text) => {
             text.inputEl.type = 'password'
             text.inputEl.placeholder = '输入加密密码'
             passwordInput = text.inputEl
         })
+
+        // 高级选项：手动输入 salt / keyHash（用于跨设备手动迁移场景）
+        const advancedToggle = contentEl.createEl('a', {
+            text: '▸ 高级选项（手动输入 salt）',
+            cls: 'nutstore-advanced-toggle',
+        })
+        advancedToggle.style.cursor = 'pointer'
+        advancedToggle.style.display = 'block'
+        advancedToggle.style.marginBottom = '12px'
+        advancedToggle.style.fontSize = '0.9em'
+
+        advancedEl = contentEl.createDiv()
+        advancedEl.style.display = 'none'
+
+        advancedToggle.addEventListener('click', () => {
+            const isOpen = advancedEl!.style.display !== 'none'
+            advancedEl!.style.display = isOpen ? 'none' : 'block'
+            advancedToggle.text = isOpen
+                ? '▸ 高级选项（手动输入 salt）'
+                : '▾ 高级选项（手动输入 salt）'
+        })
+
+        new Setting(advancedEl)
+            .setName('Salt')
+            .setDesc('从旧设备复制粘贴 salt（base64）')
+            .addText((text) => {
+                text.inputEl.placeholder = encryption.salt || '粘贴 salt...'
+                text.setValue(encryption.salt || '')
+                saltInput = text.inputEl
+            })
+
+        new Setting(advancedEl)
+            .setName('Key Hash')
+            .setDesc('从旧设备复制粘贴 keyHash（hex）')
+            .addText((text) => {
+                text.inputEl.placeholder = encryption.keyHash || '粘贴 keyHash...'
+                text.setValue(encryption.keyHash || '')
+                keyHashInput = text.inputEl
+            })
 
         errorEl = contentEl.createDiv({ cls: 'nutstore-encryption-error' })
         errorEl.style.color = 'var(--text-error)'
@@ -58,11 +100,26 @@ export function showRestoreKeyModal(
                     btn.setButtonText('正在恢复密钥...')
 
                     try {
+                        // 临时应用用户手动输入的 salt / keyHash
+                        const origSalt = encryption.salt
+                        const origHash = encryption.keyHash
+                        if (saltInput?.value) {
+                            encryption.salt = saltInput.value
+                        }
+                        if (keyHashInput?.value) {
+                            encryption.keyHash = keyHashInput.value
+                        }
+
                         const success = await restoreEncryption(
                             app,
                             password,
                             encryption,
                         )
+
+                        // 恢复原始值
+                        encryption.salt = origSalt
+                        encryption.keyHash = origHash
+
                         if (!success) {
                             errorEl.setText('密码错误，请重试')
                             errorEl.style.display = 'block'
