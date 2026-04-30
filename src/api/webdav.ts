@@ -8,20 +8,22 @@ import logger from '~/utils/logger'
 import requestUrl from '~/utils/request-url'
 import sleep from '~/utils/sleep'
 
+interface WebDAVPropstat {
+	prop: {
+		displayname: string
+		resourcetype: { collection?: any }
+		getlastmodified?: string
+		getcontentlength?: string
+		getcontenttype?: string
+	}
+	status: string
+}
+
 interface WebDAVResponse {
 	multistatus: {
 		response: Array<{
 			href: string
-			propstat: {
-				prop: {
-					displayname: string
-					resourcetype: { collection?: any }
-					getlastmodified?: string
-					getcontentlength?: string
-					getcontenttype?: string
-				}
-				status: string
-			}
+			propstat: WebDAVPropstat | WebDAVPropstat[]
 		}>
 	}
 }
@@ -31,11 +33,24 @@ function extractNextLink(linkHeader: string): string | null {
 	return matches ? matches[1] : null
 }
 
+/**
+ * 从可能为数组的 propstat 中选择最佳项。
+ * 优先选择 status 包含 200 的项，若没有则取第一项。
+ */
+function getBestPropstat(
+	propstat: WebDAVPropstat | WebDAVPropstat[],
+): WebDAVPropstat {
+	if (Array.isArray(propstat)) {
+		return propstat.find((ps) => ps.status?.includes('200')) || propstat[0]
+	}
+	return propstat
+}
+
 function convertToFileStat(
 	serverBase: string,
-	item: WebDAVResponse['multistatus']['response'][number],
+	item: { href: string; propstat: WebDAVPropstat | WebDAVPropstat[] },
 ): FileStat {
-	const props = item.propstat.prop
+	const props = getBestPropstat(item.propstat).prop
 	const isDir = !isNil(props.resourcetype?.collection)
 	const href = decodeURIComponent(item.href)
 	const filename =
@@ -76,15 +91,15 @@ export async function getDirectoryContents(
 					Depth: '1',
 				},
 				body: `<?xml version="1.0" encoding="utf-8"?>
-        <propfind xmlns="DAV:">
-          <prop>
-            <displayname/>
-            <resourcetype/>
-            <getlastmodified/>
-            <getcontentlength/>
-            <getcontenttype/>
-          </prop>
-        </propfind>`,
+	        <propfind xmlns="DAV:">
+	          <prop>
+	            <displayname/>
+	            <resourcetype/>
+	            <getlastmodified/>
+	            <getcontentlength/>
+	            <getcontenttype/>
+	          </prop>
+	        </propfind>`,
 			})
 			if (response.status >= 400) {
 				throw new Error(`${response.status}: ${response.text}`)
@@ -132,7 +147,10 @@ export async function getDirectoryContents(
 			}
 			// jianguoyun returns 409 AncestorsNotFound when the directory
 			// (or its ancestors) does not exist. Treat as empty directory.
-			if (e instanceof Error && e.message.startsWith('409')) {
+			if (
+				e instanceof Error &&
+				(e.message.startsWith('409') || e.message.startsWith('404'))
+			) {
 				return []
 			}
 			throw e
