@@ -23,7 +23,7 @@ export default class SyncExecutorService {
 			return false
 		}
 
-		await waitUntil(() => this.plugin.isSyncing === false, 500)
+		await waitUntil(() => !this.plugin.isSyncing, 500)
 
 		const sync = new NutstoreSync(this.plugin, {
 			vault: this.plugin.app.vault,

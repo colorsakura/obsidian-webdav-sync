@@ -6,7 +6,12 @@ import { WebDAVClient } from 'webdav'
 import DeleteConfirmModal from '~/components/DeleteConfirmModal'
 import FailedTasksModal, { FailedTaskInfo } from '~/components/FailedTasksModal'
 import TaskListConfirmModal from '~/components/TaskListConfirmModal'
-import { loadEncryptionKey, sampleRemoteEncryption, SECRET_ID, showRestoreKeyModal } from '~/crypto'
+import {
+	loadEncryptionKey,
+	sampleRemoteEncryption,
+	SECRET_ID,
+	showRestoreKeyModal,
+} from '~/crypto'
 import {
 	emitEndSync,
 	emitPreparingSync,
@@ -147,10 +152,7 @@ export class NutstoreSync {
 					}
 				} else if (this.settings.encryption.enabled) {
 					// 旧设备但密钥缺失：显示提示（保持原有行为）
-					new Notice(
-						'加密密钥未找到，请在设置 → 加密中恢复密钥',
-						8000,
-					)
+					new Notice('加密密钥未找到，请在设置 → 加密中恢复密钥', 8000)
 				}
 			}
 
@@ -626,7 +628,8 @@ export class NutstoreSync {
 			this.endpoint,
 			this.remoteBaseDir,
 		)
-		const skipRemoteWalk = sentinel !== null && sentinel.fingerprint === currentFingerprint
+		const skipRemoteWalk =
+			sentinel !== null && sentinel.fingerprint === currentFingerprint
 
 		await updateMtimeInRecordUtil(
 			this.plugin,

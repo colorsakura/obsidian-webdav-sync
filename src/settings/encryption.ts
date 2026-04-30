@@ -560,7 +560,9 @@ async function showLocalRepairModal(
 							let failed = 0
 							for (let i = 0; i < encryptedFiles.length; i++) {
 								const filePath = encryptedFiles[i]
-								progressText.setText(`${i + 1} / ${encryptedFiles.length} — ${filePath}`)
+								progressText.setText(
+									`${i + 1} / ${encryptedFiles.length} — ${filePath}`,
+								)
 								try {
 									const data = await vault.adapter.readBinary(filePath)
 									const decryptedData = await decrypt(data, key)
@@ -572,7 +574,10 @@ async function showLocalRepairModal(
 										success++
 									}
 								} catch (e) {
-									console.error(`[obsidian-webdav-sync] decrypt failed: ${filePath}`, e)
+									console.error(
+										`[obsidian-webdav-sync] decrypt failed: ${filePath}`,
+										e,
+									)
 									failed++
 								}
 								const pct = Math.round(((i + 1) / encryptedFiles.length) * 100)
@@ -604,7 +609,7 @@ async function showLocalRepairModal(
 									resolve()
 								}),
 							)
-							}),
+						}),
 				)
 				.addButton((btn) =>
 					btn.setButtonText('取消').onClick(() => {

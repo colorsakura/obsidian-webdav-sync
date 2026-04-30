@@ -25,7 +25,10 @@ import {
 import { twoWayDecider } from './two-way.decider.function'
 import { getDBKey } from '~/utils/get-db-key'
 import { getSentinel } from '~/storage/sentinel'
-import { buildRemoteStatsFromRecords, computeRemoteFingerprint } from '~/utils/remote-fingerprint'
+import {
+	buildRemoteStatsFromRecords,
+	computeRemoteFingerprint,
+} from '~/utils/remote-fingerprint'
 import completeLossDir from '~/fs/utils/complete-loss-dir'
 
 export default class TwoWaySyncDecider extends BaseSyncDecider {

@@ -95,9 +95,7 @@ export async function updateMtimeInRecord(
 	} else {
 		await remoteFs.clearTraversalCache()
 		const latestRemoteEntities = await remoteFs.walk()
-		remoteEntityMap = new Map(
-			latestRemoteEntities.map((e) => [e.stat.path, e]),
-		)
+		remoteEntityMap = new Map(latestRemoteEntities.map((e) => [e.stat.path, e]))
 	}
 	const startAt = Date.now()
 	let completedCount = 0
