@@ -1,5 +1,6 @@
 import { dirname } from 'path-browserify'
 import { BufferLike } from 'webdav'
+import { bufferLikeToArrayBuffer } from '~/utils/buffer-like'
 import { decrypt } from '~/crypto'
 import logger from '~/utils/logger'
 import { mkdirsVault } from '~/utils/mkdirs-vault'
@@ -42,21 +43,4 @@ export default class PullTask extends BaseTask {
 			return { success: false, error: toTaskError(e, this) }
 		}
 	}
-}
-
-function bufferLikeToArrayBuffer(buffer: BufferLike): ArrayBuffer {
-	if (buffer instanceof ArrayBuffer) {
-		return buffer
-	} else {
-		return toArrayBuffer(buffer)
-	}
-}
-
-function toArrayBuffer(buf: Buffer): ArrayBuffer {
-	if (buf.buffer instanceof SharedArrayBuffer) {
-		const copy = new ArrayBuffer(buf.byteLength)
-		new Uint8Array(copy).set(buf)
-		return copy
-	}
-	return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
 }

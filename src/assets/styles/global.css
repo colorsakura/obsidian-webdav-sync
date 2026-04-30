@@ -169,3 +169,34 @@ input.success {
 	color: var(--text-normal);
 	white-space: nowrap;
 }
+
+/* 加密方式选择卡片 */
+.nutstore-encryption-choice-container {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-4);
+	margin: var(--size-4-4) 0;
+}
+
+.nutstore-encryption-choice-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	padding: var(--size-4-4);
+	background-color: var(--background-secondary);
+}
+
+.nutstore-encryption-choice-card:hover {
+	border-color: var(--interactive-accent);
+}
+
+.nutstore-encryption-choice-header {
+	font-weight: var(--font-semibold);
+	font-size: var(--font-ui-medium);
+	margin-bottom: var(--size-4-1);
+}
+
+.nutstore-encryption-choice-desc {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	margin: var(--size-4-1) 0 var(--size-4-2) 0;
+}

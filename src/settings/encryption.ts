@@ -19,6 +19,8 @@ import {
 	verifyPassword,
 	decrypt,
 	showRestoreKeyModal,
+	findLocalEncryptedFiles,
+	repairLocalEncryptedFiles,
 } from '~/crypto'
 import type { NutstoreSettingTab } from './index'
 import BaseSettings from './settings.base'
@@ -127,7 +129,7 @@ export default class EncryptionSettingsTab extends BaseSettings {
 						.setButtonText('复制 salt')
 						.setCta()
 						.onClick(async () => {
-							await navigator.clipboard.writeText(saltValue)
+							await copyToClipboard(saltValue, 'salt')
 							new Notice('salt 已复制到剪贴板', 3000)
 						}),
 				)
@@ -137,7 +139,7 @@ export default class EncryptionSettingsTab extends BaseSettings {
 				.setDesc(keyHashValue || '未设置')
 				.addButton((btn) =>
 					btn.setButtonText('复制 keyHash').onClick(async () => {
-						await navigator.clipboard.writeText(keyHashValue)
+						await copyToClipboard(keyHashValue, 'keyHash')
 						new Notice('keyHash 已复制到剪贴板', 3000)
 					}),
 				)
@@ -418,17 +420,27 @@ async function showEncryptionSetupChoiceModal(
 
 		const contentEl = modal.contentEl
 		contentEl.createEl('p', {
-			text: '请选择设置新密码或从已有加密恢复。如果其他设备已启用加密，请选择恢复。',
+			text: '如果其他设备已启用加密，请选择恢复；否则请设置新密码。',
 		})
 
-		new Setting(contentEl).addButton((btn) =>
-			btn.setButtonText('取消').onClick(() => {
-				modal.close()
-				resolve(null)
-			}),
-		)
+		// 选项卡片容器
+		const cardContainer = contentEl.createDiv({
+			cls: 'nutstore-encryption-choice-container',
+		})
 
-		new Setting(contentEl).addButton((btn) =>
+		// 选项 1：设置新密码
+		const setupCard = cardContainer.createDiv({
+			cls: 'nutstore-encryption-choice-card',
+		})
+		const setupHeader = setupCard.createDiv({
+			cls: 'nutstore-encryption-choice-header',
+		})
+		setupHeader.createSpan({ text: '🔑 设置新密码' })
+		setupCard.createEl('p', {
+			text: '创建新的加密密码。首次使用加密功能时选择此项。',
+			cls: 'nutstore-encryption-choice-desc',
+		})
+		new Setting(setupCard).addButton((btn) =>
 			btn
 				.setButtonText('设置新密码')
 				.setCta()
@@ -438,10 +450,30 @@ async function showEncryptionSetupChoiceModal(
 				}),
 		)
 
-		new Setting(contentEl).addButton((btn) =>
+		// 选项 2：从已有加密恢复
+		const restoreCard = cardContainer.createDiv({
+			cls: 'nutstore-encryption-choice-card',
+		})
+		const restoreHeader = restoreCard.createDiv({
+			cls: 'nutstore-encryption-choice-header',
+		})
+		restoreHeader.createSpan({ text: '🔓 从已有加密恢复' })
+		restoreCard.createEl('p', {
+			text: '在新设备上恢复已有的加密密钥，继续访问远端加密数据。',
+			cls: 'nutstore-encryption-choice-desc',
+		})
+		new Setting(restoreCard).addButton((btn) =>
 			btn.setButtonText('从已有加密恢复').onClick(() => {
 				modal.close()
 				resolve('restore')
+			}),
+		)
+
+		// 底部取消
+		new Setting(contentEl).addButton((btn) =>
+			btn.setButtonText('取消').onClick(() => {
+				modal.close()
+				resolve(null)
 			}),
 		)
 
@@ -475,37 +507,7 @@ async function showLocalRepairModal(
 		})
 		;(async () => {
 			const vault = plugin.app.vault
-			const encryptedFiles: string[] = []
-
-			async function scan(dir: string) {
-				let list
-				try {
-					list = await vault.adapter.list(dir)
-				} catch {
-					return
-				}
-				const { folders, files } = list
-				for (const file of files) {
-					if (file.startsWith('.')) continue
-					const path = dir ? `${dir}/${file}` : file
-					scanningEl.setText(`正在扫描: ${path}`)
-					try {
-						const data = await vault.adapter.readBinary(path)
-						const header = new Uint8Array(data, 0, 6)
-						const magic = new TextEncoder().encode('OBSENC')
-						if (header.every((b, i) => b === magic[i])) {
-							encryptedFiles.push(path)
-						}
-					} catch {
-						// 跳过无法读取的文件
-					}
-				}
-				for (const folder of folders) {
-					if (folder.startsWith('.')) continue
-					await scan(dir ? `${dir}/${folder}` : folder)
-				}
-			}
-			await scan('')
+			const encryptedFiles = await findLocalEncryptedFiles(vault)
 
 			contentEl.empty()
 
@@ -556,50 +558,32 @@ async function showLocalRepairModal(
 							progressBar.style.width = '0%'
 							progressText.setText(`0 / ${encryptedFiles.length}`)
 
-							let success = 0
-							let failed = 0
-							for (let i = 0; i < encryptedFiles.length; i++) {
-								const filePath = encryptedFiles[i]
-								progressText.setText(
-									`${i + 1} / ${encryptedFiles.length} — ${filePath}`,
-								)
-								try {
-									const data = await vault.adapter.readBinary(filePath)
-									const decryptedData = await decrypt(data, key)
-									if (decryptedData.byteLength === data.byteLength) {
-										// decrypt 透传，说明文件不带加密头（已被解密过）
-										success++
-									} else {
-										await vault.adapter.writeBinary(filePath, decryptedData)
-										success++
-									}
-								} catch (e) {
-									console.error(
-										`[obsidian-webdav-sync] decrypt failed: ${filePath}`,
-										e,
-									)
-									failed++
-								}
-								const pct = Math.round(((i + 1) / encryptedFiles.length) * 100)
-								progressBar.style.width = `${pct}%`
-							}
+							const result = await repairLocalEncryptedFiles(
+								vault,
+								key,
+								(current, total, filePath) => {
+									progressText.setText(`${current} / ${total} — ${filePath}`)
+									const pct = Math.round((current / total) * 100)
+									progressBar.style.width = `${pct}%`
+								},
+							)
 
 							contentEl.empty()
 							contentEl.createEl('p', {
-								text: `修复完成: 成功 ${success} 个, 失败 ${failed} 个`,
+								text: `修复完成: 成功 ${result.success} 个, 失败 ${result.failed} 个`,
 							})
-							if (failed === 0) {
+							if (result.failed === 0) {
 								contentEl.createEl('p', {
 									text: '✅ 所有加密文件已解密。',
 								})
-							} else if (success === 0 && failed > 0) {
+							} else if (result.success === 0 && result.failed > 0) {
 								contentEl.createEl('p', {
 									text: '⚠️ 全部解密失败，密钥可能不匹配。请确认使用的是加密文件时的原始密码。可尝试在设置 → 加密中重新恢复密钥。',
 									cls: 'nutstore-encryption-error',
 								})
-							} else if (failed > 0) {
+							} else if (result.failed > 0) {
 								contentEl.createEl('p', {
-									text: `⚠️ ${failed} 个文件解密失败，可能是文件损坏或密钥不匹配。`,
+									text: `⚠️ ${result.failed} 个文件解密失败，可能是文件损坏或密钥不匹配。`,
 									cls: 'nutstore-text-warning',
 								})
 							}
@@ -641,5 +625,14 @@ async function showPasswordRestoreModal(
 	if (password) {
 		await plugin.saveSettings()
 		new Notice('密钥已成功恢复', 5000)
+	}
+}
+
+async function copyToClipboard(value: string, label: string): Promise<void> {
+	if (navigator?.clipboard?.writeText) {
+		await navigator.clipboard.writeText(value)
+		new Notice(`${label} 已复制到剪贴板`, 3000)
+	} else {
+		new Notice(`请手动复制 ${label}: ${value}`, 10000)
 	}
 }

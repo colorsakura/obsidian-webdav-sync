@@ -27,6 +27,8 @@ export {
 	filterPlainFiles,
 	sampleRemoteEncryption,
 	repairLocalEncryptedFiles,
+	findLocalEncryptedFiles,
+	walkLocalFiles,
 } from './migration'
 export { showRestoreKeyModal } from './password-modal'
 export type { MigrationFileInfo, MigrationProgressCallback } from './migration'

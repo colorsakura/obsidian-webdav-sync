@@ -63,6 +63,8 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 		if (cachedSentinel && cachedSentinel.fingerprint === currentFingerprint) {
 			// 哨兵匹配 → 从 sync record 推断远端状态，跳过全量遍历
 			const statModels = buildRemoteStatsFromRecords(records)
+			// statModels 同时用于 active 和 deleted 两个参数：
+			// completeLossDir 通过比较两个集合找出丢失的目录并补全
 			const completedStats = completeLossDir(statModels, statModels)
 			remoteStats = completedStats.map((stat) => ({ stat, ignored: false }))
 		} else {

@@ -1,5 +1,6 @@
 import { isEqual, noop } from 'lodash-es'
 import { BufferLike } from 'webdav'
+import { bufferLikeToArrayBuffer } from '~/utils/buffer-like'
 import { decrypt, encrypt } from '~/crypto'
 import i18n from '~/i18n'
 import { StatModel } from '~/model/stat.model'
@@ -113,9 +114,8 @@ export default class ConflictResolveTask extends BaseTask {
 			})) as BufferLike
 			let remoteContent = bufferLikeToArrayBuffer(remoteBuffer)
 
-			// 端到端解密
+			// 端到端解密（仅解密远端内容，本地始终为明文）
 			if (this.options.encryptionKey) {
-				localContent = await decrypt(localContent, this.options.encryptionKey)
 				remoteContent = await decrypt(remoteContent, this.options.encryptionKey)
 			}
 
@@ -172,9 +172,8 @@ export default class ConflictResolveTask extends BaseTask {
 			})) as BufferLike
 			let remoteContent = bufferLikeToArrayBuffer(remoteBuffer)
 
-			// 端到端解密
+			// 端到端解密（仅解密远端内容，本地始终为明文）
 			if (this.options.encryptionKey) {
-				localBuffer = await decrypt(localBuffer, this.options.encryptionKey)
 				remoteContent = await decrypt(remoteContent, this.options.encryptionKey)
 			}
 
@@ -266,9 +265,8 @@ export default class ConflictResolveTask extends BaseTask {
 			})) as BufferLike
 			let remoteContent = bufferLikeToArrayBuffer(remoteBuffer)
 
-			// 端到端解密
+			// 端到端解密（仅解密远端内容，本地始终为明文）
 			if (this.options.encryptionKey) {
-				localBuffer = await decrypt(localBuffer, this.options.encryptionKey)
 				remoteContent = await decrypt(remoteContent, this.options.encryptionKey)
 			}
 
@@ -381,29 +379,10 @@ export default class ConflictResolveTask extends BaseTask {
 	}
 }
 
-function bufferLikeToArrayBuffer(buffer: BufferLike): ArrayBuffer {
-	if (buffer instanceof ArrayBuffer) {
-		return buffer
-	}
-	return toArrayBuffer(buffer as Buffer)
-}
-
-/**
- * 将 string 编码为 ArrayBuffer
- */
 function textToArrayBuffer(text: string): ArrayBuffer {
 	const encoded = new TextEncoder().encode(text)
 	return encoded.buffer.slice(
 		encoded.byteOffset,
 		encoded.byteOffset + encoded.byteLength,
 	) as ArrayBuffer
-}
-
-function toArrayBuffer(buf: Buffer): ArrayBuffer {
-	if (buf.buffer instanceof SharedArrayBuffer) {
-		const copy = new ArrayBuffer(buf.byteLength)
-		new Uint8Array(copy).set(buf)
-		return copy
-	}
-	return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
 }

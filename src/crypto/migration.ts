@@ -6,6 +6,7 @@
 
 import { App, Notice, Vault } from 'obsidian'
 import { WebDAVClient, BufferLike } from 'webdav'
+import { bufferLikeToArrayBuffer } from '~/utils/buffer-like'
 import { decrypt, encrypt } from './cipher'
 import { isEncrypted } from './file-header'
 import { loadEncryptionKey } from './key-store'
@@ -103,9 +104,6 @@ export async function sampleRemoteEncryption(
 				const headerData = (await webdav.getFileContents(file.filename, {
 					format: 'binary',
 					details: false,
-					headers: {
-						Range: 'bytes=0-5',
-					},
 				})) as BufferLike
 				const headerBuffer = bufferLikeToArrayBuffer(headerData)
 				if (isEncrypted(headerBuffer)) {
@@ -255,20 +253,55 @@ export function filterPlainFiles(
 	return files.filter((f) => !f.isEncrypted)
 }
 
-function bufferLikeToArrayBuffer(buffer: BufferLike): ArrayBuffer {
-	if (buffer instanceof ArrayBuffer) {
-		return buffer
+/**
+ * 遍历本地 vault 所有非隐藏文件
+ */
+export async function walkLocalFiles(
+	vault: Vault,
+	dir = '',
+): Promise<string[]> {
+	const files: string[] = []
+	let list
+	try {
+		list = await vault.adapter.list(dir)
+	} catch (e) {
+		console.error(
+			'[obsidian-webdav-sync] walkLocalFiles: failed to list directory',
+			dir || '/',
+			e,
+		)
+		return files
 	}
-	return toArrayBuffer(buffer as Buffer)
+	const { folders, files: dirFiles } = list
+	for (const file of dirFiles) {
+		if (file.startsWith('.')) continue
+		files.push(dir ? `${dir}/${file}` : file)
+	}
+	for (const folder of folders) {
+		if (folder.startsWith('.')) continue
+		const subDir = dir ? `${dir}/${folder}` : folder
+		files.push(...(await walkLocalFiles(vault, subDir)))
+	}
+	return files
 }
 
-function toArrayBuffer(buf: Buffer): ArrayBuffer {
-	if (buf.buffer instanceof SharedArrayBuffer) {
-		const copy = new ArrayBuffer(buf.byteLength)
-		new Uint8Array(copy).set(buf)
-		return copy
+/**
+ * 查找本地 vault 中所有带 OBSENC 加密头的文件
+ */
+export async function findLocalEncryptedFiles(vault: Vault): Promise<string[]> {
+	const allFiles = await walkLocalFiles(vault)
+	const encrypted: string[] = []
+	for (const filePath of allFiles) {
+		try {
+			const data = await vault.adapter.readBinary(filePath)
+			if (isEncrypted(data)) {
+				encrypted.push(filePath)
+			}
+		} catch {
+			// 跳过无法读取的文件
+		}
 	}
-	return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+	return encrypted
 }
 
 /**
@@ -288,48 +321,23 @@ export async function repairLocalEncryptedFiles(
 	encryptionKey: CryptoKey,
 	onProgress?: (current: number, total: number, filePath: string) => void,
 ): Promise<{ success: number; failed: number; scanned: number }> {
-	const allFiles = await walkLocalFiles(vault)
+	const encryptedFiles = await findLocalEncryptedFiles(vault)
 	let success = 0
 	let failed = 0
-	let scanned = 0
 
-	for (let i = 0; i < allFiles.length; i++) {
-		const filePath = allFiles[i]
-		onProgress?.(i + 1, allFiles.length, filePath)
+	for (let i = 0; i < encryptedFiles.length; i++) {
+		const filePath = encryptedFiles[i]
+		onProgress?.(i + 1, encryptedFiles.length, filePath)
 
 		try {
 			const data = await vault.adapter.readBinary(filePath)
 			const decrypted = await decrypt(data, encryptionKey)
-			if (data.byteLength !== decrypted.byteLength) {
-				await vault.adapter.writeBinary(filePath, decrypted)
-				success++
-			}
-			scanned++
+			await vault.adapter.writeBinary(filePath, decrypted)
+			success++
 		} catch {
 			failed++
 		}
 	}
 
-	return { success, failed, scanned }
-}
-
-async function walkLocalFiles(vault: Vault, dir = ''): Promise<string[]> {
-	const files: string[] = []
-	let list
-	try {
-		list = await vault.adapter.list(dir)
-	} catch {
-		return files
-	}
-	const { folders, files: dirFiles } = list
-	for (const file of dirFiles) {
-		if (file.startsWith('.')) continue
-		files.push(dir ? `${dir}/${file}` : file)
-	}
-	for (const folder of folders) {
-		if (folder.startsWith('.')) continue
-		const subDir = dir ? `${dir}/${folder}` : folder
-		files.push(...(await walkLocalFiles(vault, subDir)))
-	}
-	return files
+	return { success, failed, scanned: encryptedFiles.length }
 }

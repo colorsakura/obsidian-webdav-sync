@@ -28,10 +28,18 @@ export function showRestoreKeyModal(
 		let keyHashInput: HTMLInputElement | undefined
 		let advancedEl: HTMLElement | undefined
 
+		let confirmBtnAction: (() => Promise<void>) | null = null
+
 		new Setting(contentEl).setName('密码').addText((text) => {
 			text.inputEl.type = 'password'
 			text.inputEl.placeholder = '输入加密密码'
 			passwordInput = text.inputEl
+			text.inputEl.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault()
+					confirmBtnAction?.()
+				}
+			})
 		})
 
 		// 高级选项：手动输入 salt / keyHash（用于跨设备手动迁移场景）
@@ -41,19 +49,19 @@ export function showRestoreKeyModal(
 		})
 		advancedToggle.style.cursor = 'pointer'
 		advancedToggle.style.display = 'block'
-		advancedToggle.style.marginBottom = '12px'
-		advancedToggle.style.fontSize = '0.9em'
+		advancedToggle.style.marginBottom = 'var(--size-4-3)'
 
 		advancedEl = contentEl.createDiv()
 		advancedEl.style.display = 'none'
 
-		advancedToggle.addEventListener('click', () => {
+		const toggleClickHandler = () => {
 			const isOpen = advancedEl!.style.display !== 'none'
 			advancedEl!.style.display = isOpen ? 'none' : 'block'
 			advancedToggle.text = isOpen
 				? '▸ 高级选项（手动输入 salt）'
 				: '▾ 高级选项（手动输入 salt）'
-		})
+		}
+		advancedToggle.addEventListener('click', toggleClickHandler)
 
 		new Setting(advancedEl)
 			.setName('Salt')
@@ -77,8 +85,13 @@ export function showRestoreKeyModal(
 		errorEl.style.color = 'var(--text-error)'
 		errorEl.style.display = 'none'
 
+		const cleanup = () => {
+			advancedToggle.removeEventListener('click', toggleClickHandler)
+		}
+
 		new Setting(contentEl).addButton((btn) =>
 			btn.setButtonText('取消').onClick(() => {
+				cleanup()
 				modal.close()
 				resolve(null)
 			}),
@@ -89,51 +102,65 @@ export function showRestoreKeyModal(
 				.setButtonText('确认')
 				.setCta()
 				.onClick(async () => {
-					const password = passwordInput.value
-					if (!password) {
-						errorEl.setText('请输入密码')
-						errorEl.style.display = 'block'
-						return
+					await confirmBtnAction?.()
+				})
+
+			confirmBtnAction = async () => {
+				const password = passwordInput.value
+				if (!password) {
+					errorEl.setText('请输入密码')
+					errorEl.style.display = 'block'
+					return
+				}
+
+				btn.setDisabled(true)
+				btn.setButtonText('正在恢复密钥...')
+
+				try {
+					// 临时应用用户手动输入的 salt / keyHash
+					const origSalt = encryption.salt
+					const origHash = encryption.keyHash
+					if (saltInput?.value) {
+						encryption.salt = saltInput.value
+					}
+					if (keyHashInput?.value) {
+						encryption.keyHash = keyHashInput.value
 					}
 
-					btn.setDisabled(true)
-					btn.setButtonText('正在恢复密钥...')
+					const success = await restoreEncryption(app, password, encryption)
 
-					try {
-						// 临时应用用户手动输入的 salt / keyHash
-						const origSalt = encryption.salt
-						const origHash = encryption.keyHash
-						if (saltInput?.value) {
-							encryption.salt = saltInput.value
-						}
-						if (keyHashInput?.value) {
-							encryption.keyHash = keyHashInput.value
-						}
-
-						const success = await restoreEncryption(app, password, encryption)
-
-						if (!success) {
-							// 失败：恢复原始 salt/keyHash
-							encryption.salt = origSalt
-							encryption.keyHash = origHash
-							errorEl.setText('密码错误，请重试')
-							errorEl.style.display = 'block'
-							btn.setDisabled(false)
-							btn.setButtonText('确认')
-							return
-						}
-
-						// 成功：保持有效的 salt/keyHash，显式设置 secretId
-						encryption.secretId = SECRET_ID
-						modal.close()
-						resolve(password)
-					} catch (e) {
-						errorEl.setText('密钥恢复失败: ' + String(e))
+					if (!success) {
+						// 失败：恢复原始 salt/keyHash
+						encryption.salt = origSalt
+						encryption.keyHash = origHash
+						errorEl.setText('密码错误，请重试')
 						errorEl.style.display = 'block'
 						btn.setDisabled(false)
 						btn.setButtonText('确认')
+						return
 					}
-				})
+
+					// 成功：保持有效的 salt/keyHash，显式设置 secretId
+					encryption.secretId = SECRET_ID
+					cleanup()
+					modal.close()
+					resolve(password)
+				} catch (e) {
+					errorEl.setText('密钥恢复失败: ' + String(e))
+					errorEl.style.display = 'block'
+					btn.setDisabled(false)
+					btn.setButtonText('确认')
+				}
+			}
+		})
+
+		// 键盘支持：Escape 关闭，Enter 确认
+		modal.containerEl.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') {
+				cleanup()
+				modal.close()
+				resolve(null)
+			}
 		})
 
 		modal.open()

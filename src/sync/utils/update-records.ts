@@ -156,8 +156,10 @@ export async function updateMtimeInRecord(
 					const buffer = await vault.adapter.readBinary(localPath)
 					const isMergeable = isMergeablePath(localPath)
 					if (!isMergeable) {
+						// base.key 存储 SHA-256 hex（非可合并文件）
 						baseKey = await sha256Hex(buffer)
 					} else {
+						// base.key 存储 blob store UUID（可合并文件）
 						const { key } = await blobStore.store(buffer)
 						baseKey = key
 					}
