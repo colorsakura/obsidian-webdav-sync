@@ -10,7 +10,7 @@
  */
 
 import { App, Modal, Notice, Platform, Setting } from 'obsidian'
-import type NutstorePlugin from '~/index'
+import type WebdavSyncPlugin from '~/index'
 import { EncryptionMigrationModal } from '~/components/EncryptionMigrationModal'
 import {
 	getPBKDF2Iterations,
@@ -183,7 +183,7 @@ export default class EncryptionSettingsTab extends BaseSettings {
  */
 async function showMigrationModal(
 	app: App,
-	plugin: NutstorePlugin,
+	plugin: WebdavSyncPlugin,
 ): Promise<void> {
 	const key = await loadEncryptionKey(app, plugin.settings.encryption)
 	if (!key) {
@@ -209,7 +209,7 @@ async function showMigrationModal(
  */
 async function showPasswordSetupModal(
 	app: App,
-	plugin: NutstorePlugin,
+	plugin: WebdavSyncPlugin,
 ): Promise<void> {
 	return new Promise((resolve) => {
 		const modal = new Modal(app)
@@ -299,7 +299,7 @@ async function showPasswordSetupModal(
  */
 async function showPasswordChangeModal(
 	app: App,
-	plugin: NutstorePlugin,
+	plugin: WebdavSyncPlugin,
 ): Promise<void> {
 	return new Promise((resolve) => {
 		const modal = new Modal(app)
@@ -488,7 +488,7 @@ async function showEncryptionSetupChoiceModal(
  */
 async function showLocalRepairModal(
 	app: App,
-	plugin: NutstorePlugin,
+	plugin: WebdavSyncPlugin,
 ): Promise<void> {
 	const key = await loadEncryptionKey(app, plugin.settings.encryption)
 	if (!key) {
@@ -501,13 +501,26 @@ async function showLocalRepairModal(
 		modal.titleEl.setText('修复本地加密文件')
 
 		const contentEl = modal.contentEl
-		const scanningEl = contentEl.createEl('p', {
-			text: '正在扫描本地文件...',
+		contentEl.createEl('p', {
+			text: '正在统计文件数量...',
 			cls: 'nutstore-migration-scanning',
 		})
+		modal.open()
 		;(async () => {
 			const vault = plugin.app.vault
-			const encryptedFiles = await findLocalEncryptedFiles(vault)
+
+			const scanProgressEl = contentEl.createEl('p', {
+				cls: 'nutstore-migration-progress-text',
+			})
+
+			const encryptedFiles = await findLocalEncryptedFiles(
+				vault,
+				(current, total, filePath) => {
+					scanProgressEl.setText(
+						`正在扫描: ${current} / ${total} — ${filePath}`,
+					)
+				},
+			)
 
 			contentEl.empty()
 
@@ -529,7 +542,7 @@ async function showLocalRepairModal(
 			})
 			const listEl = contentEl.createEl('ul')
 			for (const f of encryptedFiles) {
-				listEl.createEl('li', { text: f })
+				listEl.createEl('li', { text: f.path })
 			}
 
 			const progressEl = contentEl.createDiv({
@@ -558,33 +571,53 @@ async function showLocalRepairModal(
 							progressBar.style.width = '0%'
 							progressText.setText(`0 / ${encryptedFiles.length}`)
 
-							const result = await repairLocalEncryptedFiles(
-								vault,
-								key,
-								(current, total, filePath) => {
-									progressText.setText(`${current} / ${total} — ${filePath}`)
-									const pct = Math.round((current / total) * 100)
-									progressBar.style.width = `${pct}%`
-								},
-							)
+							try {
+								const result = await repairLocalEncryptedFiles(
+									vault,
+									key,
+									encryptedFiles,
+									(current, total, filePath) => {
+										progressText.setText(`${current} / ${total} — ${filePath}`)
+										const pct = Math.round((current / total) * 100)
+										progressBar.style.width = `${pct}%`
+									},
+								)
 
-							contentEl.empty()
-							contentEl.createEl('p', {
-								text: `修复完成: 成功 ${result.success} 个, 失败 ${result.failed} 个`,
-							})
-							if (result.failed === 0) {
+								contentEl.empty()
 								contentEl.createEl('p', {
-									text: '✅ 所有加密文件已解密。',
+									text: `修复完成: 成功 ${result.success} 个`,
 								})
-							} else if (result.success === 0 && result.failed > 0) {
+								if (result.failed === 0) {
+									contentEl.createEl('p', {
+										text: '✅ 所有加密文件已解密。',
+									})
+								} else {
+									const parts: string[] = []
+									if (result.decryptErrors > 0)
+										parts.push(`${result.decryptErrors} 个解密失败`)
+									if (result.writeErrors > 0)
+										parts.push(`${result.writeErrors} 个写入失败`)
+									if (result.readErrors > 0)
+										parts.push(`${result.readErrors} 个读取失败`)
+
+									if (result.success === 0) {
+										contentEl.createEl('p', {
+											text: `⚠️ 全部失败（${parts.join('，')}）。密钥可能不匹配，请确认使用的是加密文件时的原始密码。可尝试在设置 → 加密中重新恢复密钥。`,
+											cls: 'nutstore-encryption-error',
+										})
+									} else {
+										contentEl.createEl('p', {
+											text: `⚠️ ${result.failed} 个文件失败（${parts.join('，')}）。`,
+											cls: 'nutstore-text-warning',
+										})
+									}
+								}
+							} catch (err) {
+								console.error('[obsidian-webdav-sync] repair error:', err)
+								contentEl.empty()
 								contentEl.createEl('p', {
-									text: '⚠️ 全部解密失败，密钥可能不匹配。请确认使用的是加密文件时的原始密码。可尝试在设置 → 加密中重新恢复密钥。',
+									text: `❌ 修复过程出错: ${err instanceof Error ? err.message : String(err)}`,
 									cls: 'nutstore-encryption-error',
-								})
-							} else if (result.failed > 0) {
-								contentEl.createEl('p', {
-									text: `⚠️ ${result.failed} 个文件解密失败，可能是文件损坏或密钥不匹配。`,
-									cls: 'nutstore-text-warning',
 								})
 							}
 							new Setting(contentEl).addButton((btn2) =>
@@ -601,8 +634,6 @@ async function showLocalRepairModal(
 						resolve()
 					}),
 				)
-
-			modal.open()
 		})()
 	})
 }
@@ -614,7 +645,7 @@ async function showLocalRepairModal(
  */
 async function showPasswordRestoreModal(
 	app: App,
-	plugin: NutstorePlugin,
+	plugin: WebdavSyncPlugin,
 ): Promise<void> {
 	const password = await showRestoreKeyModal(
 		app,
