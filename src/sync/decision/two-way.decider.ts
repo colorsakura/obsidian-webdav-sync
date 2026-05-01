@@ -60,7 +60,11 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 
 		let remoteStats
 
-		if (cachedSentinel && cachedSentinel.fingerprint === currentFingerprint) {
+		if (
+			cachedSentinel &&
+			cachedSentinel.fingerprint === currentFingerprint &&
+			records.size > 0
+		) {
 			// 哨兵匹配 → 从 sync record 推断远端状态，跳过全量遍历
 			const statModels = buildRemoteStatsFromRecords(records)
 			// statModels 同时用于 active 和 deleted 两个参数：
