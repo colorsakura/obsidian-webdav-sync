@@ -31,7 +31,7 @@ import { ConflictStrategy } from './sync/tasks/conflict-resolve.task'
 import { GlobMatchOptions } from './utils/glob-match'
 import { stdRemotePath } from './utils/std-remote-path'
 
-export default class NutstorePlugin extends Plugin {
+export default class WebdavSyncPlugin extends Plugin {
 	public isSyncing: boolean = false
 	public settings!: NutstoreSettings
 

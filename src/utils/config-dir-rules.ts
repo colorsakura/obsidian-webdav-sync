@@ -1,4 +1,4 @@
-import type NutstorePlugin from '~/index'
+import type WebdavSyncPlugin from '~/index'
 import type { GlobMatchOptions } from './glob-match'
 
 export type ConfigDirSyncMode = 'none' | 'bookmarks' | 'all'
@@ -84,7 +84,7 @@ export function computeEffectiveFilterRulesFromParts(
  * sync time only.
  */
 export function computeEffectiveFilterRules(
-	plugin: NutstorePlugin,
+	plugin: WebdavSyncPlugin,
 ): EffectiveFilterRules {
 	const configDir = plugin.app.vault.configDir
 	const mode: ConfigDirSyncMode = plugin.settings.configDirSyncMode ?? 'none'

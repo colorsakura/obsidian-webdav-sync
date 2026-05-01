@@ -274,28 +274,51 @@ export async function walkLocalFiles(
 	}
 	const { folders, files: dirFiles } = list
 	for (const file of dirFiles) {
-		if (file.startsWith('.')) continue
-		files.push(dir ? `${dir}/${file}` : file)
+		const name = file.split('/').pop() || file
+		if (name.startsWith('.')) continue
+		files.push(file)
 	}
 	for (const folder of folders) {
-		if (folder.startsWith('.')) continue
-		const subDir = dir ? `${dir}/${folder}` : folder
-		files.push(...(await walkLocalFiles(vault, subDir)))
+		const name = folder.split('/').pop() || folder
+		if (name.startsWith('.')) continue
+		files.push(...(await walkLocalFiles(vault, folder)))
 	}
 	return files
 }
 
 /**
- * 查找本地 vault 中所有带 OBSENC 加密头的文件
+ * 加密文件信息（含已读取的数据，避免二次读取）
  */
-export async function findLocalEncryptedFiles(vault: Vault): Promise<string[]> {
+export interface EncryptedFileInfo {
+	path: string
+	data: ArrayBuffer
+}
+
+/**
+ * 查找本地 vault 中所有带 OBSENC 加密头的文件
+ *
+ * 遍历 vault 所有文件，读取内容检查加密头。
+ * 命中的文件数据会被缓存返回，供后续修复阶段复用，避免二次读取。
+ *
+ * @param vault - Obsidian Vault 实例
+ * @param onProgress - 扫描进度回调 (current, total, filePath)
+ */
+export async function findLocalEncryptedFiles(
+	vault: Vault,
+	onProgress?: (current: number, total: number, filePath: string) => void,
+): Promise<EncryptedFileInfo[]> {
 	const allFiles = await walkLocalFiles(vault)
-	const encrypted: string[] = []
-	for (const filePath of allFiles) {
+	const encrypted: EncryptedFileInfo[] = []
+	const total = allFiles.length
+
+	for (let i = 0; i < allFiles.length; i++) {
+		const filePath = allFiles[i]
+		onProgress?.(i + 1, total, filePath)
+
 		try {
 			const data = await vault.adapter.readBinary(filePath)
 			if (isEncrypted(data)) {
-				encrypted.push(filePath)
+				encrypted.push({ path: filePath, data })
 			}
 		} catch {
 			// 跳过无法读取的文件
@@ -308,36 +331,75 @@ export async function findLocalEncryptedFiles(vault: Vault): Promise<string[]> {
  * 修复本地异常加密文件
  *
  * 当密钥缺失导致 PullTask 未解密就写入本地时，本地文件可能残留
- * OBSENC 密文数据。此函数遍历本地 vault 文件，对检测到加密头的
- * 文件用密钥解密后覆盖。非加密文件（decrypt 透传）不受影响。
+ * OBSENC 密文数据。此函数对检测到加密头的文件用密钥解密后覆盖。
+ * 非加密文件（decrypt 透传）不受影响。
  *
  * @param vault - Obsidian Vault 实例
  * @param encryptionKey - 加密密钥
+ * @param encryptedFiles - findLocalEncryptedFiles 的返回结果（含缓存数据）
  * @param onProgress - 进度回调 (current, total, filePath)
- * @returns 修复统计
+ * @returns 修复统计（按错误类型分类）
  */
 export async function repairLocalEncryptedFiles(
 	vault: Vault,
 	encryptionKey: CryptoKey,
+	encryptedFiles: EncryptedFileInfo[],
 	onProgress?: (current: number, total: number, filePath: string) => void,
-): Promise<{ success: number; failed: number; scanned: number }> {
-	const encryptedFiles = await findLocalEncryptedFiles(vault)
+): Promise<{
+	success: number
+	failed: number
+	readErrors: number
+	decryptErrors: number
+	writeErrors: number
+	scanned: number
+}> {
 	let success = 0
-	let failed = 0
+	let readErrors = 0
+	let decryptErrors = 0
+	let writeErrors = 0
 
 	for (let i = 0; i < encryptedFiles.length; i++) {
-		const filePath = encryptedFiles[i]
+		const { path: filePath, data } = encryptedFiles[i]
 		onProgress?.(i + 1, encryptedFiles.length, filePath)
 
 		try {
-			const data = await vault.adapter.readBinary(filePath)
 			const decrypted = await decrypt(data, encryptionKey)
 			await vault.adapter.writeBinary(filePath, decrypted)
 			success++
-		} catch {
-			failed++
+		} catch (e) {
+			if (e instanceof DOMException || e instanceof Error) {
+				const msg = e.message || String(e)
+				// 某些环境下 decrypt 失败会抛出 OperationError (DOMException)
+				if (
+					msg.includes('decrypt') ||
+					msg.includes('operation') ||
+					msg.includes('OperationError')
+				) {
+					decryptErrors++
+					continue
+				}
+				// writeBinary 失败通常是权限/磁盘问题
+				if (
+					msg.includes('write') ||
+					msg.includes('permission') ||
+					msg.includes('ENOENT') ||
+					msg.includes('EACCES')
+				) {
+					writeErrors++
+					continue
+				}
+			}
+			// 无法分类的归入 readErrors（极少见，可能是内存不足等）
+			readErrors++
 		}
 	}
 
-	return { success, failed, scanned: encryptedFiles.length }
+	return {
+		success,
+		failed: decryptErrors + writeErrors + readErrors,
+		readErrors,
+		decryptErrors,
+		writeErrors,
+		scanned: encryptedFiles.length,
+	}
 }

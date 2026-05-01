@@ -1,9 +1,9 @@
 import { createClient, WebDAVClient } from 'webdav'
-import NutstorePlugin from '../index'
+import WebdavSyncPlugin from '../index'
 import { createRateLimitedWebDAVClient } from '../utils/rate-limited-client'
 
 export class WebDAVService {
-	constructor(private plugin: NutstorePlugin) {}
+	constructor(private plugin: WebdavSyncPlugin) {}
 
 	async createWebDAVClient(): Promise<WebDAVClient> {
 		const client = createClient(this.plugin.settings.webdavEndpoint, {

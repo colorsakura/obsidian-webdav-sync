@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 import i18n from '~/i18n'
-import type NutstorePlugin from '~/index'
+import type WebdavSyncPlugin from '~/index'
 import { EncryptionSettings } from '~/crypto/types'
 import { ConflictStrategy } from '~/sync/tasks/conflict-resolve.task'
 import { GlobMatchOptions } from '~/utils/glob-match'
@@ -43,9 +43,9 @@ export interface NutstoreSettings {
 	encryption: EncryptionSettings
 }
 
-let pluginInstance: NutstorePlugin | null = null
+let pluginInstance: WebdavSyncPlugin | null = null
 
-export function setPluginInstance(plugin: NutstorePlugin | null) {
+export function setPluginInstance(plugin: WebdavSyncPlugin | null) {
 	pluginInstance = plugin
 }
 
@@ -59,7 +59,7 @@ export async function useSettings() {
 }
 
 export class NutstoreSettingTab extends PluginSettingTab {
-	plugin: NutstorePlugin
+	plugin: WebdavSyncPlugin
 	accountSettings: AccountSettings
 	commonSettings: CommonSettings
 	filterSettings: FilterSettings
@@ -68,7 +68,7 @@ export class NutstoreSettingTab extends PluginSettingTab {
 	encryptionSettings: EncryptionSettingsTab
 	warningContainerEl: HTMLElement
 
-	constructor(app: App, plugin: NutstorePlugin) {
+	constructor(app: App, plugin: WebdavSyncPlugin) {
 		super(app, plugin)
 		this.plugin = plugin
 		this.warningContainerEl = this.containerEl.createDiv()

@@ -2,7 +2,7 @@ import { Notice } from 'obsidian'
 import logger from '~/utils/logger'
 import { emitCancelSync } from '../events'
 import i18n from '../i18n'
-import type NutstorePlugin from '../index'
+import type WebdavSyncPlugin from '../index'
 import { NutstoreSync, SyncStartMode } from '../sync'
 import SyncConfirmModal from './SyncConfirmModal'
 
@@ -10,7 +10,7 @@ export class SyncRibbonManager {
 	private startRibbonEl: HTMLElement
 	private stopRibbonEl: HTMLElement
 
-	constructor(private plugin: NutstorePlugin) {
+	constructor(private plugin: WebdavSyncPlugin) {
 		this.startRibbonEl = this.plugin.addRibbonIcon(
 			'refresh-ccw',
 			i18n.t('sync.startButton'),
