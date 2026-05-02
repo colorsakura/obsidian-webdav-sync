@@ -1,4 +1,4 @@
-import { BufferLike } from 'webdav'
+import type { BufferLike } from 'webdav'
 
 export function bufferLikeToArrayBuffer(buffer: BufferLike): ArrayBuffer {
 	if (buffer instanceof ArrayBuffer) {

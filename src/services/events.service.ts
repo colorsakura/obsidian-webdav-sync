@@ -1,5 +1,5 @@
 import { Notice } from 'obsidian'
-import { Subscription } from 'rxjs'
+import type { Subscription } from 'rxjs'
 import {
 	onEndSync,
 	onPreparingSync,
@@ -9,7 +9,7 @@ import {
 } from '~/events'
 import i18n from '~/i18n'
 import { is503Error } from '~/utils/is-503-error'
-import NutstorePlugin from '..'
+import type NutstorePlugin from '..'
 
 export default class EventsService {
 	subscriptions: Subscription[]

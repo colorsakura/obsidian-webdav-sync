@@ -1,6 +1,6 @@
 import localforage from 'localforage'
-import { StatModel } from '~/model/stat.model'
-import { SyncRecordModel } from '~/model/sync-record.model'
+import type { StatModel } from '~/model/stat.model'
+import type { SyncRecordModel } from '~/model/sync-record.model'
 import type { RemoteSentinel } from '~/model/remote-sentinel.model'
 import useStorage from './use-storage'
 

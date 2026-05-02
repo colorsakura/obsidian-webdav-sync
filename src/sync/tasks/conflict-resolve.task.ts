@@ -1,10 +1,10 @@
 import { isEqual, noop } from 'lodash-es'
-import { BufferLike } from 'webdav'
+import type { BufferLike } from 'webdav'
 import { bufferLikeToArrayBuffer } from '~/utils/buffer-like'
 import { decrypt, encrypt } from '~/crypto'
 import i18n from '~/i18n'
-import { StatModel } from '~/model/stat.model'
-import { SyncRecordModel } from '~/model/sync-record.model'
+import type { StatModel } from '~/model/stat.model'
+import type { SyncRecordModel } from '~/model/sync-record.model'
 import { blobStore } from '~/storage/blob'
 import { isMergeablePath } from '~/sync/utils/is-mergeable-path'
 import { isSameTime } from '~/utils/is-same-time'
@@ -17,7 +17,8 @@ import {
 	resolveByIntelligentMerge,
 	resolveByLatestTimestamp,
 } from '../core/merge-utils'
-import { BaseTask, BaseTaskOptions, toTaskError } from './task.interface'
+import type { BaseTaskOptions } from './task.interface'
+import { BaseTask, toTaskError } from './task.interface'
 
 export enum ConflictStrategy {
 	DiffMatchPatch = 'diff-match-patch',
@@ -107,8 +108,8 @@ export default class ConflictResolveTask extends BaseTask {
 					),
 				}
 			}
-			let localContent = await this.vault.adapter.readBinary(this.localPath)
-			let remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
+			const localContent = await this.vault.adapter.readBinary(this.localPath)
+			const remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
 				details: false,
 				format: 'binary',
 			})) as BufferLike
@@ -165,8 +166,8 @@ export default class ConflictResolveTask extends BaseTask {
 			if (!exists) {
 				throw new Error('cannot find file in local fs: ' + this.localPath)
 			}
-			let localBuffer = await this.vault.adapter.readBinary(this.localPath)
-			let remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
+			const localBuffer = await this.vault.adapter.readBinary(this.localPath)
+			const remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
 				format: 'binary',
 				details: false,
 			})) as BufferLike
@@ -258,8 +259,8 @@ export default class ConflictResolveTask extends BaseTask {
 			if (!exists) {
 				throw new Error('cannot find file in local fs: ' + this.localPath)
 			}
-			let localBuffer = await this.vault.adapter.readBinary(this.localPath)
-			let remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
+			const localBuffer = await this.vault.adapter.readBinary(this.localPath)
+			const remoteBuffer = (await this.webdav.getFileContents(this.remotePath, {
 				format: 'binary',
 				details: false,
 			})) as BufferLike

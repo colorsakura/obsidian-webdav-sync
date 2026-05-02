@@ -1,4 +1,4 @@
-import { WebDAVClient } from 'webdav'
+import type { WebDAVClient } from 'webdav'
 import { apiLimiter } from './api-limiter'
 
 export function createRateLimitedWebDAVClient(

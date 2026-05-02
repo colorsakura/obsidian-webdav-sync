@@ -1,7 +1,8 @@
 import i18n from '~/i18n'
 import logger from '~/utils/logger'
 import { statVaultItem } from '~/utils/stat-vault-item'
-import { BaseTask, BaseTaskOptions, toTaskError } from './task.interface'
+import type { BaseTaskOptions } from './task.interface'
+import { BaseTask, toTaskError } from './task.interface'
 
 interface MkdirsRemoteTaskOptions extends BaseTaskOptions {
 	// Additional paths that will be created along with the main path

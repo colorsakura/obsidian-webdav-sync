@@ -1,4 +1,4 @@
-import MkdirRemoteTask from '../tasks/mkdir-remote.task'
+import type MkdirRemoteTask from '../tasks/mkdir-remote.task'
 import MkdirsRemoteTask from '../tasks/mkdirs-remote.task'
 
 /**

@@ -1,6 +1,7 @@
 import logger from '~/utils/logger'
 import { statVaultItem } from '~/utils/stat-vault-item'
-import { BaseTask, BaseTaskOptions, toTaskError } from './task.interface'
+import type { BaseTaskOptions } from './task.interface'
+import { BaseTask, toTaskError } from './task.interface'
 
 export default class RemoveLocalTask extends BaseTask {
 	constructor(

@@ -1,6 +1,7 @@
-import { App, Modal, Setting } from 'obsidian'
+import type { App } from 'obsidian'
+import { Modal, Setting } from 'obsidian'
 import i18n from '~/i18n'
-import RemoveLocalTask from '../sync/tasks/remove-local.task'
+import type RemoveLocalTask from '../sync/tasks/remove-local.task'
 
 export default class DeleteConfirmModal extends Modal {
 	private confirmed: boolean = false

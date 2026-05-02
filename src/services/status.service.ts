@@ -1,6 +1,6 @@
 import { Notice } from 'obsidian'
 import i18n from '../i18n'
-import WebdavSyncPlugin from '../index'
+import type WebdavSyncPlugin from '../index'
 import { formatRelativeTime } from '../utils/format-relative-time'
 
 export class StatusService {

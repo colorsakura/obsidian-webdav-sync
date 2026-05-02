@@ -12,7 +12,7 @@ import RemoveLocalTask from '~/sync/tasks/remove-local.task'
 import RemoveRemoteRecursivelyTask from '~/sync/tasks/remove-remote-recursively.task'
 import RemoveRemoteTask from '~/sync/tasks/remove-remote.task'
 import SkippedTask from '~/sync/tasks/skipped.task'
-import { BaseTask } from '~/sync/tasks/task.interface'
+import type { BaseTask } from '~/sync/tasks/task.interface'
 
 export default function getTaskName(task: BaseTask) {
 	if (task instanceof CleanRecordTask) {

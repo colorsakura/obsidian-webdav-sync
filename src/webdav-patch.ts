@@ -4,8 +4,9 @@
  * reference: https://github.com/remotely-save/remotely-save/blob/34db181af002f8d71ea0a87e7965abc57b294914/src/fsWebdav.ts#L25
  */
 import { getReasonPhrase } from 'http-status-codes/build/cjs/utils-functions'
-import { Platform, RequestUrlParam } from 'obsidian'
-import { RequestOptionsWithState } from 'webdav'
+import type { RequestUrlParam } from 'obsidian'
+import { Platform } from 'obsidian'
+import type { RequestOptionsWithState } from 'webdav'
 import requestUrl from './utils/request-url'
 import { getPatcher } from 'webdav'
 import { VALID_REQURL } from '~/consts'
@@ -80,13 +81,13 @@ if (VALID_REQURL) {
 		if ([101, 103, 204, 205, 304].includes(r.status)) {
 			r2 = new Response(null, {
 				status: r.status,
-				statusText: statusText,
+				statusText,
 				headers: rspHeaders,
 			})
 		} else {
 			r2 = new Response(r.arrayBuffer, {
 				status: r.status,
-				statusText: statusText,
+				statusText,
 				headers: rspHeaders,
 			})
 		}

@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 export default function <T>(ob: Observable<T>, ms: number) {
 	return new Promise<void>((resolve, reject) => {

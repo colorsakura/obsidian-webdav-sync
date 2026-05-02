@@ -1,8 +1,9 @@
 import { cloneDeep } from 'lodash-es'
 import { Modal, Setting } from 'obsidian'
 import i18n from '~/i18n'
-import { getUserOptions, GlobMatchOptions } from '~/utils/glob-match'
-import NutstorePlugin from '..'
+import type { GlobMatchOptions } from '~/utils/glob-match'
+import { getUserOptions } from '~/utils/glob-match'
+import type NutstorePlugin from '..'
 
 enum FilterType {
 	Include = 'include',

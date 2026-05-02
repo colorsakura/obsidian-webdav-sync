@@ -1,4 +1,4 @@
-import { Vault } from 'obsidian'
+import type { Vault } from 'obsidian'
 import { dirname, normalize } from 'path-browserify'
 
 export async function mkdirsVault(vault: Vault, path: string) {

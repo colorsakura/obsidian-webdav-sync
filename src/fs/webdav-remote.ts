@@ -1,23 +1,22 @@
-import { Vault } from 'obsidian'
+import type { Vault } from 'obsidian'
 import { isAbsolute } from 'path-browserify'
 import { isNotNil } from 'ramda'
-import { createClient, WebDAVClient } from 'webdav'
+import type { WebDAVClient } from 'webdav'
+import { createClient } from 'webdav'
 import { useSettings } from '~/settings'
 import { traverseWebDAVKV } from '~/storage/kv'
-import {
-	ConfigDirSyncMode,
-	computeEffectiveFilterRulesFromParts,
-} from '~/utils/config-dir-rules'
+import type { ConfigDirSyncMode } from '~/utils/config-dir-rules'
+import { computeEffectiveFilterRulesFromParts } from '~/utils/config-dir-rules'
 import { getTraversalWebDAVDBKey } from '~/utils/get-db-key'
+import type { GlobMatchOptions } from '~/utils/glob-match'
 import GlobMatch, {
-	GlobMatchOptions,
 	isVoidGlobMatchOptions,
 	needIncludeFromGlobRules,
 } from '~/utils/glob-match'
 import { isSub } from '~/utils/is-sub'
 import { stdRemotePath } from '~/utils/std-remote-path'
 import { ResumableWebDAVTraversal } from '~/utils/traverse-webdav'
-import AbstractFileSystem from './fs.interface'
+import type AbstractFileSystem from './fs.interface'
 import completeLossDir from './utils/complete-loss-dir'
 
 export class WebDAVRemoteFileSystem implements AbstractFileSystem {

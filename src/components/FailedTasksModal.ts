@@ -1,4 +1,5 @@
-import { App, Modal, Setting } from 'obsidian'
+import type { App } from 'obsidian'
+import { Modal, Setting } from 'obsidian'
 import i18n from '~/i18n'
 
 interface FailedTaskInfo {

@@ -1,6 +1,6 @@
 import { Modal, Setting } from 'obsidian'
 import i18n from '~/i18n'
-import { StatModel } from '~/model/stat.model'
+import type { StatModel } from '~/model/stat.model'
 import CacheService from '~/services/cache.service.v1'
 import logger from '~/utils/logger'
 import type NutstorePlugin from '..'
@@ -83,7 +83,7 @@ export default class CacheRestoreModal extends Modal {
 						await this.cacheService.restoreCache(basename)
 						this.onSuccess?.()
 						this.close()
-					} catch (error) {
+					} catch {
 						// Error is already handled in the service
 					}
 				})
@@ -98,7 +98,7 @@ export default class CacheRestoreModal extends Modal {
 						try {
 							await this.cacheService.deleteCache(basename)
 							await this.loadFileList()
-						} catch (error) {
+						} catch {
 							// Error is already handled in the service
 						}
 					} else {

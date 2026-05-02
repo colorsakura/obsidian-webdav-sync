@@ -4,15 +4,15 @@
  * 显示远端文件加密状态，并提供一键迁移功能
  */
 
-import { App, Modal, Notice, Setting } from 'obsidian'
-import { WebDAVClient } from 'webdav'
+import type { App } from 'obsidian'
+import { Modal, Notice, Setting } from 'obsidian'
+import type { WebDAVClient } from 'webdav'
 import {
 	detectRemoteFiles,
 	migrateToEncrypted,
 	filterPlainFiles,
 	type MigrationFileInfo,
 } from '~/crypto'
-import i18n from '~/i18n'
 
 export class EncryptionMigrationModal extends Modal {
 	private webdav: WebDAVClient

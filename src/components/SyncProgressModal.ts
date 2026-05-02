@@ -1,12 +1,13 @@
-import { ButtonComponent, Modal, setIcon, Setting } from 'obsidian'
-import { Subscription } from 'rxjs'
+import type { ButtonComponent } from 'obsidian'
+import { Modal, setIcon, Setting } from 'obsidian'
+import type { Subscription } from 'rxjs'
 import CleanRecordTask from '~/sync/tasks/clean-record.task'
 import FilenameErrorTask from '~/sync/tasks/filename-error.task'
 import MkdirsRemoteTask from '~/sync/tasks/mkdirs-remote.task'
 import RemoveRemoteRecursivelyTask from '~/sync/tasks/remove-remote-recursively.task'
 import SkippedTask from '~/sync/tasks/skipped.task'
 import getTaskName from '~/utils/get-task-name'
-import NutstorePlugin from '..'
+import type NutstorePlugin from '..'
 import {
 	emitCancelSync,
 	onCancelSync,

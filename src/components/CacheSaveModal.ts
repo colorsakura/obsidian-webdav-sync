@@ -1,7 +1,7 @@
 import { Modal, Setting, moment } from 'obsidian'
 import i18n from '~/i18n'
 import CacheService from '~/services/cache.service.v1'
-import NutstorePlugin from '..'
+import type NutstorePlugin from '..'
 
 export default class CacheSaveModal extends Modal {
 	private cacheService: CacheService
@@ -49,7 +49,7 @@ export default class CacheSaveModal extends Modal {
 							await this.cacheService.saveCache(filename)
 							this.onSuccess?.()
 							this.close()
-						} catch (error) {
+						} catch {
 							// Error is already handled in the service
 						}
 					})

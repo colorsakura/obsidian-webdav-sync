@@ -4,13 +4,11 @@
  * 处理明文 → 密文的迁移，以及密码修改后的重加密
  */
 
-import { App, Notice, Vault } from 'obsidian'
-import { WebDAVClient, BufferLike } from 'webdav'
+import type { Vault } from 'obsidian'
+import type { WebDAVClient, BufferLike } from 'webdav'
 import { bufferLikeToArrayBuffer } from '~/utils/buffer-like'
 import { decrypt, encrypt } from './cipher'
 import { isEncrypted } from './file-header'
-import { loadEncryptionKey } from './key-store'
-import type { EncryptionSettings } from './types'
 
 /**
  * 需要迁移的文件信息

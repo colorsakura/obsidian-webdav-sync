@@ -1,4 +1,5 @@
-import { BaseTask, BaseTaskOptions } from './task.interface'
+import type { BaseTaskOptions } from './task.interface'
+import { BaseTask } from './task.interface'
 
 export enum SkipReason {
 	FileTooLarge = 'file-too-large',

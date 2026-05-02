@@ -1,13 +1,13 @@
 import { Mutex } from 'async-mutex'
 import { getDirectoryContents } from '~/api/webdav'
-import { StatModel } from '~/model/stat.model'
+import type { StatModel } from '~/model/stat.model'
 import { traverseWebDAVKV } from '~/storage'
 import { fileStatToStatModel } from './file-stat-to-stat-model'
 import { is503Error } from './is-503-error'
 import logger from './logger'
 import sleep from './sleep'
 import { stdRemotePath } from './std-remote-path'
-import { MaybePromise } from './types'
+import type { MaybePromise } from './types'
 
 // Global mutex map: one lock per kvKey
 const traversalLocks = new Map<string, Mutex>()

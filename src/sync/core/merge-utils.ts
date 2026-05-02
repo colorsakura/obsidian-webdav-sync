@@ -1,7 +1,7 @@
 import { diff_match_patch } from 'diff-match-patch'
 import { isEqual } from 'lodash-es'
 import { diff3Merge as nodeDiff3Merge } from 'node-diff3'
-import { BufferLike } from 'webdav'
+import type { BufferLike } from 'webdav'
 import { isSameTime } from '~/utils/is-same-time'
 
 // --- Logic for Latest Timestamp Resolution ---
@@ -120,7 +120,10 @@ export async function resolveByIntelligentMerge(
 
 	const diffs = dmp.diff_main(baseContentText, remoteContentText)
 	const patches = dmp.patch_make(baseContentText, diffs)
-	let [mergedDmpText, solveResult] = dmp.patch_apply(patches, localContentText)
+	const [mergedDmpText, solveResult] = dmp.patch_apply(
+		patches,
+		localContentText,
+	)
 
 	if (solveResult.includes(false)) {
 		return { success: false }

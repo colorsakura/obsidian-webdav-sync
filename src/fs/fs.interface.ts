@@ -1,5 +1,5 @@
-import { StatModel } from '~/model/stat.model'
-import { MaybePromise } from '~/utils/types'
+import type { StatModel } from '~/model/stat.model'
+import type { MaybePromise } from '~/utils/types'
 
 export interface FsWalkResult {
 	stat: StatModel

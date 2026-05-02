@@ -1,14 +1,10 @@
 import { throttle } from 'lodash-es'
 import { Notice } from 'obsidian'
 import SyncProgressModal from '../components/SyncProgressModal'
-import {
-	onEndSync,
-	onStartSync,
-	onSyncProgress,
-	UpdateSyncProgress,
-} from '~/events'
+import type { UpdateSyncProgress } from '~/events'
+import { onEndSync, onStartSync, onSyncProgress } from '~/events'
 import i18n from '../i18n'
-import WebdavSyncPlugin from '../index'
+import type WebdavSyncPlugin from '../index'
 
 export class ProgressService {
 	private progressModal: SyncProgressModal | null = null

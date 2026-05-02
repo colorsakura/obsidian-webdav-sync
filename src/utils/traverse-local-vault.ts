@@ -1,5 +1,6 @@
-import { normalizePath, Vault } from 'obsidian'
-import { StatModel } from '~/model/stat.model'
+import type { Vault } from 'obsidian'
+import { normalizePath } from 'obsidian'
+import type { StatModel } from '~/model/stat.model'
 import { getConfigDirSystemTraversalRules } from './config-dir-rules'
 import GlobMatch from './glob-match'
 import { statVaultItem } from './stat-vault-item'

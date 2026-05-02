@@ -1,7 +1,7 @@
 import { normalize } from 'path-browserify'
 import { isSub } from '~/utils/is-sub'
 import RemoveRemoteRecursivelyTask from '../tasks/remove-remote-recursively.task'
-import RemoveRemoteTask from '../tasks/remove-remote.task'
+import type RemoveRemoteTask from '../tasks/remove-remote.task'
 
 export function mergeRemoveRemoteTasks(
 	tasks: RemoveRemoteTask[],

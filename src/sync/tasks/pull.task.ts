@@ -1,10 +1,11 @@
 import { dirname } from 'path-browserify'
-import { BufferLike } from 'webdav'
+import type { BufferLike } from 'webdav'
 import { bufferLikeToArrayBuffer } from '~/utils/buffer-like'
 import { decrypt, ENCRYPTION_OVERHEAD } from '~/crypto'
 import logger from '~/utils/logger'
 import { mkdirsVault } from '~/utils/mkdirs-vault'
-import { BaseTask, BaseTaskOptions, toTaskError } from './task.interface'
+import type { BaseTaskOptions } from './task.interface'
+import { BaseTask, toTaskError } from './task.interface'
 
 export default class PullTask extends BaseTask {
 	constructor(

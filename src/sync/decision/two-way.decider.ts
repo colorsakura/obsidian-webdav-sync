@@ -1,6 +1,6 @@
 import { isEqual } from 'ohash'
 import { blobStore } from '~/storage/blob'
-import { SyncRecord } from '~/storage/sync-record'
+import type { SyncRecord } from '~/storage/sync-record'
 import { sha256Hex } from '~/utils/sha256'
 import CleanRecordTask from '../tasks/clean-record.task'
 import ConflictResolveTask from '../tasks/conflict-resolve.task'
@@ -13,9 +13,9 @@ import PushTask from '../tasks/push.task'
 import RemoveLocalTask from '../tasks/remove-local.task'
 import RemoveRemoteTask from '../tasks/remove-remote.task'
 import SkippedTask from '../tasks/skipped.task'
-import { BaseTask } from '../tasks/task.interface'
+import type { BaseTask } from '../tasks/task.interface'
 import BaseSyncDecider from './base.decider'
-import {
+import type {
 	ConflictTaskOptions,
 	PullTaskOptions,
 	SkippedTaskOptions,

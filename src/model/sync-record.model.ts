@@ -1,4 +1,4 @@
-import { StatModel } from './stat.model'
+import type { StatModel } from './stat.model'
 
 export interface SyncRecordModel {
 	local: StatModel

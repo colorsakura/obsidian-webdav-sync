@@ -1,4 +1,4 @@
-import { FsWalkResult } from '~/fs/fs.interface'
+import type { FsWalkResult } from '~/fs/fs.interface'
 import { isSub } from '../../utils/is-sub'
 
 /**

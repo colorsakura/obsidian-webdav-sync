@@ -1,7 +1,7 @@
 import { XMLParser } from 'fast-xml-parser'
 import { isNil, partial } from 'lodash-es'
 import { basename, join } from 'path-browserify'
-import { FileStat } from 'webdav'
+import type { FileStat } from 'webdav'
 
 import { is503Error } from '~/utils/is-503-error'
 import logger from '~/utils/logger'

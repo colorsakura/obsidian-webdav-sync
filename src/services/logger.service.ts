@@ -1,7 +1,7 @@
 import { moment } from 'obsidian'
 import { IN_DEV } from '~/consts'
 import logger from '~/utils/logger'
-import NutstorePlugin from '..'
+import type NutstorePlugin from '..'
 
 export default class LoggerService {
 	logs: any[] = []

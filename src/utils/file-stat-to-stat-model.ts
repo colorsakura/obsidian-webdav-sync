@@ -1,5 +1,5 @@
-import { FileStat } from 'webdav'
-import { StatModel } from '~/model/stat.model'
+import type { FileStat } from 'webdav'
+import type { StatModel } from '~/model/stat.model'
 
 export function fileStatToStatModel(from: FileStat): StatModel {
 	return {

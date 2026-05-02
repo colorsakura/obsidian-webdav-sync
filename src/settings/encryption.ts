@@ -9,7 +9,8 @@
  * - 新设备密钥恢复
  */
 
-import { App, Modal, Notice, Platform, Setting } from 'obsidian'
+import { Modal, Notice, Setting } from 'obsidian'
+import type { App } from 'obsidian'
 import type WebdavSyncPlugin from '~/index'
 import { EncryptionMigrationModal } from '~/components/EncryptionMigrationModal'
 import {
@@ -17,12 +18,10 @@ import {
 	loadEncryptionKey,
 	setupEncryption,
 	verifyPassword,
-	decrypt,
 	showRestoreKeyModal,
 	findLocalEncryptedFiles,
 	repairLocalEncryptedFiles,
 } from '~/crypto'
-import type { NutstoreSettingTab } from './index'
 import BaseSettings from './settings.base'
 
 export default class EncryptionSettingsTab extends BaseSettings {

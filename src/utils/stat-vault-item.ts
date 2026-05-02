@@ -1,6 +1,7 @@
-import { normalizePath, Vault } from 'obsidian'
+import type { Vault } from 'obsidian'
+import { normalizePath } from 'obsidian'
 import { basename } from 'path-browserify'
-import { StatModel } from '~/model/stat.model'
+import type { StatModel } from '~/model/stat.model'
 
 export async function statVaultItem(
 	vault: Vault,

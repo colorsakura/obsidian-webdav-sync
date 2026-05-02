@@ -1,17 +1,15 @@
-import { Vault } from 'obsidian'
+import type { Vault } from 'obsidian'
 import { useSettings } from '~/settings'
-import { SyncRecord } from '~/storage/sync-record'
-import {
-	ConfigDirSyncMode,
-	computeEffectiveFilterRulesFromParts,
-} from '~/utils/config-dir-rules'
+import type { SyncRecord } from '~/storage/sync-record'
+import type { ConfigDirSyncMode } from '~/utils/config-dir-rules'
+import { computeEffectiveFilterRulesFromParts } from '~/utils/config-dir-rules'
+import type { GlobMatchOptions } from '~/utils/glob-match'
 import GlobMatch, {
-	GlobMatchOptions,
 	isVoidGlobMatchOptions,
 	needIncludeFromGlobRules,
 } from '~/utils/glob-match'
 import { traverseLocalVault } from '~/utils/traverse-local-vault'
-import AbstractFileSystem from './fs.interface'
+import type AbstractFileSystem from './fs.interface'
 import completeLossDir from './utils/complete-loss-dir'
 
 export class LocalVaultFileSystem implements AbstractFileSystem {

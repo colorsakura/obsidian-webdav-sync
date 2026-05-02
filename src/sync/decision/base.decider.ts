@@ -1,7 +1,7 @@
-import { SyncRecord } from '~/storage/sync-record'
-import { MaybePromise } from '~/utils/types'
-import { NutstoreSync } from '..'
-import { BaseTask } from '../tasks/task.interface'
+import type { SyncRecord } from '~/storage/sync-record'
+import type { MaybePromise } from '~/utils/types'
+import type { NutstoreSync } from '..'
+import type { BaseTask } from '../tasks/task.interface'
 
 export default abstract class BaseSyncDecider {
 	constructor(

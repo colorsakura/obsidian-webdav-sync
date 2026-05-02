@@ -4,7 +4,7 @@ import { emitCancelSync } from '~/events'
 import i18n from '~/i18n'
 import { NutstoreSync, SyncStartMode } from '~/sync'
 import logger from '~/utils/logger'
-import NutstorePlugin from '..'
+import type NutstorePlugin from '..'
 
 export default class CommandService {
 	constructor(plugin: NutstorePlugin) {

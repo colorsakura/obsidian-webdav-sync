@@ -1,7 +1,7 @@
 import i18n from '~/i18n'
 import { useSettings } from '~/settings'
 import logger from '~/utils/logger'
-import NutstorePlugin from '..'
+import type NutstorePlugin from '..'
 
 export default class I18nService {
 	constructor(private plugin: NutstorePlugin) {

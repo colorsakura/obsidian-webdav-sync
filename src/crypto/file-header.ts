@@ -13,7 +13,7 @@
  * └──────────────────────────────────────┘
  */
 
-import { FileHeader } from './types'
+import type { FileHeader } from './types'
 
 /** magic header 用于识别加密文件 */
 const MAGIC = new TextEncoder().encode('OBSENC') // [79, 66, 83, 69, 78, 67]

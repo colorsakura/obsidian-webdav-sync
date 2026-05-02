@@ -8,7 +8,7 @@
  * 4. 忘记密码 → 无法恢复（远端文件永久不可解密）
  */
 
-import { App } from 'obsidian'
+import type { App } from 'obsidian'
 import { fromUint8Array, toUint8Array } from 'js-base64'
 import { deriveKey } from './key-derivation'
 import type { EncryptionSettings } from './types'

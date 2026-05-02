@@ -1,9 +1,10 @@
-import { normalizePath, Vault } from 'obsidian'
+import type { Vault } from 'obsidian'
+import { normalizePath } from 'obsidian'
 import { isAbsolute, join } from 'path-browserify'
-import { WebDAVClient } from 'webdav'
-import { SyncRecord } from '~/storage/sync-record'
+import type { WebDAVClient } from 'webdav'
+import type { SyncRecord } from '~/storage/sync-record'
 import getTaskName from '~/utils/get-task-name'
-import { MaybePromise } from '~/utils/types'
+import type { MaybePromise } from '~/utils/types'
 
 export interface BaseTaskOptions {
 	vault: Vault

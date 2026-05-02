@@ -1,6 +1,7 @@
 import { syncRecordKV } from '~/storage'
 import { SyncRecord } from '~/storage/sync-record'
-import { NutstoreSync, SyncStartMode } from '~/sync'
+import type { SyncStartMode } from '~/sync'
+import { NutstoreSync } from '~/sync'
 import TwoWaySyncDecider from '~/sync/decision/two-way.decider'
 import { getDBKey } from '~/utils/get-db-key'
 import waitUntil from '~/utils/wait-until'

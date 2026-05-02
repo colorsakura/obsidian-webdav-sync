@@ -1,5 +1,5 @@
-import { SyncRecordModel } from '~/model/sync-record.model'
-import { UseStorageType } from './use-storage'
+import type { SyncRecordModel } from '~/model/sync-record.model'
+import type { UseStorageType } from './use-storage'
 
 export class SyncRecord {
 	constructor(

@@ -2,7 +2,7 @@ import { debounce } from 'lodash-es'
 import { useSettings } from '~/settings'
 import { SyncStartMode } from '~/sync'
 import waitUntil from '~/utils/wait-until'
-import NutstorePlugin from '..'
+import type NutstorePlugin from '..'
 import type SyncExecutorService from './sync-executor.service'
 
 export default class RealtimeSyncService {

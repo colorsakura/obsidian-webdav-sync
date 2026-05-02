@@ -1,7 +1,8 @@
-import { App, Modal, Setting } from 'obsidian'
+import type { App } from 'obsidian'
+import { Modal, Setting } from 'obsidian'
 import i18n from '~/i18n'
 import getTaskName from '~/utils/get-task-name'
-import { BaseTask } from '../sync/tasks/task.interface'
+import type { BaseTask } from '../sync/tasks/task.interface'
 
 export default class TaskListConfirmModal extends Modal {
 	private result: boolean = false
