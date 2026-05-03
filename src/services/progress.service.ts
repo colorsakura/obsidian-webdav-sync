@@ -1,4 +1,3 @@
-import { throttle } from 'lodash-es'
 import { Notice } from 'obsidian'
 import SyncProgressModal from '../components/SyncProgressModal'
 import type { UpdateSyncProgress } from '~/events'
@@ -15,6 +14,8 @@ export class ProgressService {
 	}
 
 	syncEnd = false
+
+	private rafId: number | null = null
 
 	private subscriptions = [
 		onStartSync().subscribe(() => {
@@ -33,11 +34,13 @@ export class ProgressService {
 
 	constructor(private plugin: WebdavSyncPlugin) {}
 
-	updateModal = throttle(() => {
-		if (this.progressModal) {
-			this.progressModal.update()
-		}
-	}, 200)
+	updateModal = () => {
+		if (this.rafId !== null) return
+		this.rafId = requestAnimationFrame(() => {
+			this.rafId = null
+			this.progressModal?.update()
+		})
+	}
 
 	public resetProgress() {
 		this.syncProgress = {
