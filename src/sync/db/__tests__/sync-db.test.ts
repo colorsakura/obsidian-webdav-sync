@@ -35,7 +35,7 @@ describe('SyncDB', () => {
         'note.md': { content: 'hello', mtime: 1000 },
         'ignored.txt': { content: 'ignored', mtime: 1000 },
       })
-      const filterRules = { exclude: ['*.txt'], include: [] }
+      const filterRules = { exclude: [{ expr: '*.txt', options: { caseSensitive: false } }], include: [] }
 
       const db = await SyncDB.fromVault(mockVault, filterRules)
 

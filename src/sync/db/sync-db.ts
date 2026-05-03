@@ -1,7 +1,7 @@
 import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js'
 import type { Vault } from 'obsidian'
 import { sha256Hex } from '~/utils/sha256'
-import GlobMatch, { needIncludeFromGlobRules } from '~/utils/glob-match'
+import GlobMatch, { needIncludeFromGlobRules, type GlobMatchOptions } from '~/utils/glob-match'
 
 export interface DBFile {
   path: string
@@ -12,8 +12,8 @@ export interface DBFile {
 }
 
 export interface FilterRules {
-  exclude: string[]
-  include: string[]
+  exclude: GlobMatchOptions[]
+  include: GlobMatchOptions[]
 }
 
 export class SyncDB {
@@ -29,12 +29,11 @@ export class SyncDB {
     SyncDB.setMeta(db, 'version', '1')
     SyncDB.setMeta(db, 'created_at', String(Date.now()))
 
-    const defaultOptions = { caseSensitive: false }
     const excludeGlobs: GlobMatch[] = filterRules.exclude.map(
-      (p) => new GlobMatch(p, defaultOptions)
+      (p) => new GlobMatch(p.expr, p.options)
     )
     const includeGlobs: GlobMatch[] = filterRules.include.map(
-      (p) => new GlobMatch(p, defaultOptions)
+      (p) => new GlobMatch(p.expr, p.options)
     )
 
     const isIncluded = (path: string): boolean => {
