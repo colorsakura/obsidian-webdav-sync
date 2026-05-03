@@ -19,13 +19,9 @@ import {
 } from '../core/merge-utils'
 import type { BaseTaskOptions } from './task.interface'
 import { BaseTask, toTaskError } from './task.interface'
+import { ConflictStrategy } from './conflict-strategy'
 
-export enum ConflictStrategy {
-	DiffMatchPatch = 'diff-match-patch',
-	LatestTimeStamp = 'latest-timestamp',
-	Skip = 'skip',
-	DiffMatchPatchOrSkip = 'diff-match-patch-or-skip',
-}
+export { ConflictStrategy }
 
 export default class ConflictResolveTask extends BaseTask {
 	constructor(

@@ -1,7 +1,7 @@
-import type { FsWalkResult } from '~/fs/fs.interface'
+import type { SyncDB } from '../db/sync-db'
 import type { StatModel } from '~/model/stat.model'
 import type { SyncMode } from '~/settings'
-import type { ConflictStrategy } from '../tasks/conflict-resolve.task'
+import type { ConflictStrategy } from '../tasks/conflict-strategy'
 import type { SkipReason } from '../tasks/skipped.task'
 import type { BaseTask } from '../tasks/task.interface'
 
@@ -14,12 +14,6 @@ export interface SyncDecisionSettings {
 	encryptionEnabled: boolean
 }
 
-export interface SyncRecordItem {
-	remote: StatModel
-	local: StatModel
-	base?: { key: string }
-}
-
 export interface TaskOptions {
 	remotePath: string
 	localPath: string
@@ -27,7 +21,6 @@ export interface TaskOptions {
 }
 
 export interface ConflictTaskOptions extends TaskOptions {
-	record?: SyncRecordItem
 	strategy: ConflictStrategy
 	localStat: StatModel
 	remoteStat: StatModel
@@ -80,16 +73,9 @@ export interface TaskFactory {
 
 export interface SyncDecisionInput {
 	settings: SyncDecisionSettings
-	localStats: FsWalkResult[]
-	remoteStats: FsWalkResult[]
-	syncRecords: Map<string, SyncRecordItem>
+	localDB: SyncDB
+	remoteDB: SyncDB
+	lastSyncDB: SyncDB
 	remoteBaseDir: string
-	getBaseContent: (key: string) => Promise<ArrayBuffer | null>
-	compareFileContent: (
-		filePath: string,
-		baseContent: ArrayBuffer,
-	) => Promise<boolean>
-	/** 对非可合并文件比较 SHA-256 哈希值，用于内容去重 */
-	compareFileHash: (filePath: string, expectedHash: string) => Promise<boolean>
 	taskFactory: TaskFactory
 }
