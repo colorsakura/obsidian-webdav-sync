@@ -4,6 +4,7 @@ import { SyncDB } from '../../db/sync-db'
 import type { SyncDecisionInput, TaskFactory } from '../sync-decision.interface'
 import type { BaseTask } from '../../tasks/task.interface'
 import type { SyncMode } from '~/settings'
+const SKIP_REASON_FILE_TOO_LARGE = 'file-too-large'
 
 function createMockTaskFactory(): TaskFactory {
   const createTask = (type: string) => vi.fn().mockImplementation((opts: any) => ({
@@ -134,5 +135,157 @@ describe('twoWayDecider (DB-based)', () => {
     expect(factory.createRemoveRemoteTask).toHaveBeenCalledWith(
       expect.objectContaining({ localPath: 'del.md' })
     )
+  })
+
+  // I3: 远端删除 + 本地未改 → RemoveLocal
+  it('远端删除 + 本地未改 → RemoveLocal', async () => {
+    const localDB = await SyncDB.empty('device-1')
+    localDB.upsertFile({ path: 'remote-deleted.md', mtime: 1000, size: 100, hash: 'd'.repeat(64), isDir: 0 })
+    const remoteDB = await SyncDB.empty('device-2')
+    const lastSyncDB = await SyncDB.empty('device-1')
+    lastSyncDB.upsertFile({ path: 'remote-deleted.md', mtime: 1000, size: 100, hash: 'd'.repeat(64), isDir: 0 })
+
+    const factory = createMockTaskFactory()
+    await twoWayDecider({ settings: defaultSettings, localDB, remoteDB, lastSyncDB, remoteBaseDir: '/remote', taskFactory: factory })
+
+    expect(factory.createRemoveLocalTask).toHaveBeenCalledWith(
+      expect.objectContaining({ localPath: 'remote-deleted.md' })
+    )
+  })
+
+  // I3: 双方都删除了文件 → 自然清理 (不生成任何文件任务)
+  it('双方都删除的文件不生成任务 (自然清理)', async () => {
+    const localDB = await SyncDB.empty('device-1')
+    const remoteDB = await SyncDB.empty('device-2')
+    const lastSyncDB = await SyncDB.empty('device-1')
+    lastSyncDB.upsertFile({ path: 'both-deleted.md', mtime: 1000, size: 100, hash: 'd'.repeat(64), isDir: 0 })
+
+    const factory = createMockTaskFactory()
+    await twoWayDecider({ settings: defaultSettings, localDB, remoteDB, lastSyncDB, remoteBaseDir: '/remote', taskFactory: factory })
+
+    // 不应该创建任何文件相关的任务
+    expect(factory.createPushTask).not.toHaveBeenCalled()
+    expect(factory.createPullTask).not.toHaveBeenCalled()
+    expect(factory.createNoopTask).not.toHaveBeenCalled()
+    expect(factory.createRemoveLocalTask).not.toHaveBeenCalled()
+    expect(factory.createRemoveRemoteTask).not.toHaveBeenCalled()
+    expect(factory.createConflictResolveTask).not.toHaveBeenCalled()
+  })
+
+  // I3: 文件名包含非法字符 → FilenameError
+  it('文件名包含非法字符时生成 FilenameError 任务', async () => {
+    const localDB = await SyncDB.empty('device-1')
+    localDB.upsertFile({ path: 'bad:file.md', mtime: 1000, size: 100, hash: 'a'.repeat(64), isDir: 0 })
+    const remoteDB = await SyncDB.empty('device-2')
+    const lastSyncDB = await SyncDB.empty('device-1')
+
+    const factory = createMockTaskFactory()
+    await twoWayDecider({ settings: defaultSettings, localDB, remoteDB, lastSyncDB, remoteBaseDir: '/remote', taskFactory: factory })
+
+    expect(factory.createFilenameErrorTask).toHaveBeenCalledWith(
+      expect.objectContaining({ localPath: 'bad:file.md' })
+    )
+    expect(factory.createPushTask).not.toHaveBeenCalled()
+  })
+
+  // I3: 文件过大 → SkippedTask(FileTooLarge)
+  it('文件太大时生成 SkippedTask (FileTooLarge)', async () => {
+    const localDB = await SyncDB.empty('device-1')
+    localDB.upsertFile({ path: 'big-file.md', mtime: 1000, size: 2 * 1024 * 1024, hash: 'a'.repeat(64), isDir: 0 })
+    const remoteDB = await SyncDB.empty('device-2')
+    const lastSyncDB = await SyncDB.empty('device-1')
+
+    const factory = createMockTaskFactory()
+    const settings = { ...defaultSettings, skipLargeFiles: { maxSize: '1MB' } }
+    await twoWayDecider({ settings, localDB, remoteDB, lastSyncDB, remoteBaseDir: '/remote', taskFactory: factory })
+
+    expect(factory.createSkippedTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        localPath: 'big-file.md',
+        reason: SKIP_REASON_FILE_TOO_LARGE,
+        maxSize: 1024 * 1024,
+      })
+    )
+    expect(factory.createPushTask).not.toHaveBeenCalled()
+  })
+
+  // 目录测试：本地新建目录 → MkdirRemote
+  it('本地新建目录应该生成 MkdirRemote 任务', async () => {
+    const localDB = await SyncDB.empty('device-1')
+    localDB.upsertFile({ path: 'new-folder', mtime: 0, size: 0, hash: '', isDir: 1 })
+    const remoteDB = await SyncDB.empty('device-2')
+    const lastSyncDB = await SyncDB.empty('device-1')
+
+    const factory = createMockTaskFactory()
+    await twoWayDecider({ settings: defaultSettings, localDB, remoteDB, lastSyncDB, remoteBaseDir: '/remote', taskFactory: factory })
+
+    expect(factory.createMkdirRemoteTask).toHaveBeenCalledWith(
+      expect.objectContaining({ localPath: 'new-folder' })
+    )
+  })
+
+  // 目录非法字符测试
+  it('目录名包含非法字符时生成 FilenameError 任务', async () => {
+    const localDB = await SyncDB.empty('device-1')
+    localDB.upsertFile({ path: 'bad:folder', mtime: 0, size: 0, hash: '', isDir: 1 })
+    const remoteDB = await SyncDB.empty('device-2')
+    const lastSyncDB = await SyncDB.empty('device-1')
+
+    const factory = createMockTaskFactory()
+    await twoWayDecider({ settings: defaultSettings, localDB, remoteDB, lastSyncDB, remoteBaseDir: '/remote', taskFactory: factory })
+
+    expect(factory.createFilenameErrorTask).toHaveBeenCalledWith(
+      expect.objectContaining({ localPath: 'bad:folder' })
+    )
+    expect(factory.createMkdirRemoteTask).not.toHaveBeenCalled()
+  })
+
+  // I2: 任务排序测试 — 删除任务（深优先）在创建目录任务（浅优先）之前
+  it('任务排序: 删除任务（深优先）→ 目录任务（浅优先）→ 文件任务', async () => {
+    const localDB = await SyncDB.empty('device-1')
+    const remoteDB = await SyncDB.empty('device-2')
+    const lastSyncDB = await SyncDB.empty('device-1')
+
+    // 需要删除的嵌套文件 (最深)
+    remoteDB.upsertFile({ path: 'a/b/c/del.md', mtime: 1000, size: 100, hash: 'd'.repeat(64), isDir: 0 })
+    lastSyncDB.upsertFile({ path: 'a/b/c/del.md', mtime: 1000, size: 100, hash: 'd'.repeat(64), isDir: 0 })
+
+    // 需要创建的目录 (浅层)
+    localDB.upsertFile({ path: 'x', mtime: 0, size: 0, hash: '', isDir: 1 })
+    localDB.upsertFile({ path: 'x/y', mtime: 0, size: 0, hash: '', isDir: 1 })
+
+    // 普通文件
+    localDB.upsertFile({ path: 'push-me.md', mtime: 2000, size: 150, hash: 'new-hash'.padEnd(64, 'x'), isDir: 0 })
+    remoteDB.upsertFile({ path: 'push-me.md', mtime: 1000, size: 100, hash: 'old-hash'.padEnd(64, 'x'), isDir: 0 })
+    lastSyncDB.upsertFile({ path: 'push-me.md', mtime: 1000, size: 100, hash: 'old-hash'.padEnd(64, 'x'), isDir: 0 })
+
+    const factory = createMockTaskFactory()
+    const result = await twoWayDecider({ settings: defaultSettings, localDB, remoteDB, lastSyncDB, remoteBaseDir: '/remote', taskFactory: factory })
+
+    // 按顺序检查类型
+    const types = result.map((t: any) => t.type)
+    const removeIdx = types.indexOf('remove-remote')
+    const mkdirIdx = types.findIndex((t: string) => t === 'mkdir-remote')
+    const pushIdx = types.indexOf('push')
+
+    expect(removeIdx).toBeGreaterThanOrEqual(0)
+    // 删除任务应该在目录任务之前
+    expect(removeIdx).toBeLessThan(mkdirIdx)
+    // 目录任务应该在文件任务之前
+    expect(mkdirIdx).toBeLessThan(pushIdx)
+  })
+
+  // C4: 文件与目录类型冲突 → 抛出错误
+  it('文件与目录类型冲突时抛出错误', async () => {
+    const localDB = await SyncDB.empty('device-1')
+    localDB.upsertFile({ path: 'conflict-type', mtime: 1000, size: 100, hash: 'a'.repeat(64), isDir: 0 })
+    const remoteDB = await SyncDB.empty('device-2')
+    remoteDB.upsertFile({ path: 'conflict-type', mtime: 0, size: 0, hash: '', isDir: 1 })
+    const lastSyncDB = await SyncDB.empty('device-1')
+
+    const factory = createMockTaskFactory()
+    await expect(
+      twoWayDecider({ settings: defaultSettings, localDB, remoteDB, lastSyncDB, remoteBaseDir: '/remote', taskFactory: factory })
+    ).rejects.toThrow('type conflict')
   })
 })
