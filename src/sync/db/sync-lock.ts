@@ -22,7 +22,7 @@ export class SyncLock {
 		private deviceId: string,
 		private timeoutMs: number = 5 * 60 * 1000,
 	) {
-		this.lockPath = `${remoteBaseDir}/_sync/lock`
+		this.lockPath = `${remoteBaseDir.replace(/\/$/, '')}/_sync/lock`
 	}
 
 	get isHeld(): boolean {

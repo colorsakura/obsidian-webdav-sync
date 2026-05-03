@@ -9,7 +9,7 @@ export class DBStorage {
 		private webdav: WebDAVClient,
 		remoteBaseDir: string,
 	) {
-		this.dbPath = `${remoteBaseDir}/_sync/db`
+		this.dbPath = `${remoteBaseDir.replace(/\/$/, '')}/_sync/db`
 	}
 
 	async download(): Promise<SyncDB | undefined> {
