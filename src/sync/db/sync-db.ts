@@ -1,6 +1,4 @@
-import initSqlJs, {
-	type Database as SqlJsDatabase,
-} from 'sql.js'
+import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js'
 import type { Vault } from 'obsidian'
 import { sha256Hex } from '~/utils/sha256'
 import GlobMatch, {

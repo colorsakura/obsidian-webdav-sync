@@ -13,7 +13,7 @@ import {
 	onCancelSync,
 	onStartSync,
 	onSyncUpdateMtimeProgress,
-} from '../events'
+} from '~/events'
 import i18n from '../i18n'
 import ConflictResolveTask from '../sync/tasks/conflict-resolve.task'
 import MkdirLocalTask from '../sync/tasks/mkdir-local.task'
