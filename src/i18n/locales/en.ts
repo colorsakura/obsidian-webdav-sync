@@ -300,6 +300,7 @@ export default {
 		progressTitle: 'Sync progress',
 		progressStats: 'Completed: {{completed}} / {{total}} tasks',
 		completedFilesTitle: 'Completed tasks',
+		showingRecent: 'showing recent {{shown}} / {{total}} total',
 		syncingFiles: 'Syncing files...',
 		updatingCache: 'Updating local cache...',
 		cacheUpdated: 'Local cache updated.',

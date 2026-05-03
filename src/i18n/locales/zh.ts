@@ -291,6 +291,7 @@ export default {
 		progressTitle: '同步进度',
 		progressStats: '已完成: {{completed}} / {{total}} 个任务',
 		completedFilesTitle: '已完成的任务',
+		showingRecent: '显示最近 {{shown}} / 共 {{total}} 条',
 		syncingFiles: '正在同步文件...',
 		updatingCache: '正在更新本地缓存...',
 		cacheUpdated: '本地缓存已更新。',

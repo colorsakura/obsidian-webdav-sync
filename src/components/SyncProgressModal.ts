@@ -11,6 +11,7 @@ import type NutstorePlugin from '..'
 import {
 	emitCancelSync,
 	onCancelSync,
+	onStartSync,
 	onSyncUpdateMtimeProgress,
 } from '../events'
 import i18n from '../i18n'
@@ -28,8 +29,12 @@ export default class SyncProgressModal extends Modal {
 	private progressStats!: HTMLDivElement
 	private currentFile!: HTMLDivElement
 	private filesList!: HTMLDivElement
+	private filesHeader!: HTMLDivElement
 	private syncCancelled = false
+	private renderedCount = 0
+	private static readonly MAX_VISIBLE_ITEMS = 100
 	private cancelSubscription: Subscription
+	private startSyncSubscription: Subscription
 	private updateMtimeSubscription: Subscription
 	private stopButtonComponent!: ButtonComponent
 	private hideButtonComponent!: ButtonComponent
@@ -48,6 +53,11 @@ export default class SyncProgressModal extends Modal {
 			this.syncCancelled = true
 			this.update()
 		})
+		this.startSyncSubscription = onStartSync().subscribe(() => {
+			this.renderedCount = 0
+			this.syncCancelled = false
+			this.filesList?.empty()
+		})
 		this.updateMtimeSubscription = onSyncUpdateMtimeProgress().subscribe(
 			(progress) => {
 				this.updateCacheProgress(progress.total, progress.completed)
@@ -61,7 +71,8 @@ export default class SyncProgressModal extends Modal {
 			!this.progressText ||
 			!this.progressStats ||
 			!this.currentFile ||
-			!this.filesList
+			!this.filesList ||
+			!this.filesHeader
 		) {
 			return
 		}
@@ -106,11 +117,9 @@ export default class SyncProgressModal extends Modal {
 			}
 		}
 
-		this.filesList.empty()
-
-		const recentFiles = progress.completed.slice().reverse()
-
-		recentFiles.forEach((file) => {
+		// Only render new items incrementally
+		const newItems = progress.completed.slice(this.renderedCount)
+		newItems.forEach((file) => {
 			const item = this.filesList.createDiv({
 				cls: 'flex items-center p-1 rounded text-2.5 gap-2 hover:bg-[var(--background-secondary)]',
 			})
@@ -160,6 +169,29 @@ export default class SyncProgressModal extends Modal {
 				}),
 			)
 		})
+
+		this.renderedCount = progress.completed.length
+
+		// Cap visible DOM nodes
+		while (
+			this.filesList.children.length > SyncProgressModal.MAX_VISIBLE_ITEMS
+		) {
+			this.filesList.firstElementChild?.remove()
+		}
+
+		// Update header with count when capped
+		const totalRendered = this.renderedCount
+		if (totalRendered > SyncProgressModal.MAX_VISIBLE_ITEMS) {
+			this.filesHeader.setText(
+				i18n.t('sync.completedFilesTitle') +
+					` (${i18n.t('sync.showingRecent', {
+						shown: SyncProgressModal.MAX_VISIBLE_ITEMS,
+						total: totalRendered,
+					})})`,
+			)
+		} else {
+			this.filesHeader.setText(i18n.t('sync.completedFilesTitle'))
+		}
 	}
 
 	onOpen() {
@@ -254,6 +286,7 @@ export default class SyncProgressModal extends Modal {
 		this.progressStats = progressStats
 		this.currentFile = currentFile
 		this.filesList = filesList
+		this.filesHeader = filesHeader
 
 		const footerButtons = container.createDiv({
 			cls: 'border-t border-[var(--background-modifier-border)]',
@@ -281,6 +314,7 @@ export default class SyncProgressModal extends Modal {
 
 	onClose(): void {
 		this.cancelSubscription.unsubscribe()
+		this.startSyncSubscription.unsubscribe()
 		this.updateMtimeSubscription.unsubscribe()
 		const { contentEl } = this
 		contentEl.empty()
