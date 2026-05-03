@@ -24,10 +24,12 @@
         "@typescript/native-preview": "^7.0.0-dev.20260421.2",
         "@vitest/coverage-v8": "^4.1.5",
         "async-mutex": "^0.5.0",
+        "blob-polyfill": "^9.0.20240710",
         "bottleneck": "^2.19.5",
         "buffer": "^6.0.3",
         "bytes-iec": "^3.1.1",
         "consola": "^3.4.0",
+        "core-js": "^3.41.0",
         "crypto-browserify": "^3.12.1",
         "diff-match-patch": "^1.0.5",
         "dotenv": "^17.4.2",
@@ -531,6 +533,8 @@
     "base64-js": ["base64-js@1.5.1", "", {}, "sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA=="],
 
     "baseline-browser-mapping": ["baseline-browser-mapping@2.10.23", "", { "bin": { "baseline-browser-mapping": "dist/cli.cjs" } }, "sha512-xwVXGqevyKPsiuQdLj+dZMVjidjJV508TBqexND5HrF89cGdCYCJFB3qhcxRHSeMctdCfbR1jrxBajhDy7o29g=="],
+
+    "blob-polyfill": ["blob-polyfill@9.0.20240710", "", {}, "sha512-DPUO/EjNANCgSVg0geTy1vmUpu5hhp9tV2F7xUSTUd1jwe4XpwupGB+lt5PhVUqpqAk+zK1etqp6Pl/HVf71Ug=="],
 
     "bn.js": ["bn.js@5.2.3", "", {}, "sha512-EAcmnPkxpntVL+DS7bO1zhcZNvCkxqtkd0ZY53h06GNQ3DEkkGZ/gKgmDv6DdZQGj9BgfSPKtJJ7Dp1GPP8f7w=="],
 
