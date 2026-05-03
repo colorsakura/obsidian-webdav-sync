@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { SyncDB } from '../sync-db'
 
 describe('SyncDB', () => {
@@ -55,6 +55,15 @@ describe('SyncDB', () => {
       expect(restored.getAllFiles()).toEqual(db.getAllFiles())
       expect(restored.getMeta('device_id')).toBe('device-1')
     })
+
+    it('应该在传入无效数据时抛出错误', async () => {
+      const corruptBuffer = new ArrayBuffer(100)
+      const view = new Uint8Array(corruptBuffer)
+      for (let i = 0; i < 100; i++) view[i] = Math.floor(Math.random() * 256)
+      await expect(SyncDB.fromBuffer(corruptBuffer)).rejects.toThrow(
+        'Failed to load SyncDB from buffer: invalid or corrupt SQLite data'
+      )
+    })
   })
 
   describe('empty', () => {
@@ -76,27 +85,77 @@ describe('SyncDB', () => {
       expect(db.getAllPaths()).toEqual(new Set(['a/b.md']))
     })
   })
+
+  describe('deleteFile', () => {
+    it('应该删除指定文件', async () => {
+      const db = await SyncDB.empty('device-1')
+      db.upsertFile({ path: 'test.md', mtime: 1000, size: 100, hash: 'a'.repeat(64), isDir: 0 })
+      expect(db.getFile('test.md')).toBeDefined()
+
+      db.deleteFile('test.md')
+      expect(db.getFile('test.md')).toBeUndefined()
+      expect(db.getAllPaths().has('test.md')).toBe(false)
+    })
+  })
+
+  describe('upsertFile', () => {
+    it('应该更新已有文件（REPLACE 语义）', async () => {
+      const db = await SyncDB.empty('device-1')
+      db.upsertFile({ path: 'test.md', mtime: 1000, size: 100, hash: 'a'.repeat(64), isDir: 0 })
+
+      // 更新同一路径的文件
+      db.upsertFile({ path: 'test.md', mtime: 2000, size: 200, hash: 'b'.repeat(64), isDir: 0 })
+
+      const file = db.getFile('test.md')!
+      expect(file.mtime).toBe(2000)
+      expect(file.size).toBe(200)
+      expect(file.hash).toBe('b'.repeat(64))
+    })
+  })
 })
 
-// helper
-function createMockVault(files: Record<string, any>) {
+// helper: 构造模拟 Obsidian Vault，adapter.list 仅返回指定路径的直接子节点
+function createMockVault(entries: Record<string, any>) {
   return {
     adapter: {
-      list: vi.fn().mockResolvedValue({
-        files: Object.entries(files)
-          .filter(([, v]) => !v.isDir)
-          .map(([path]) => path),
-        folders: Object.entries(files)
-          .filter(([, v]) => v.isDir)
-          .map(([path]) => path),
+      list: vi.fn().mockImplementation((path: string) => {
+        // 将请求路径标准化为无首尾斜杠
+        const normalizedPath = path.replace(/^\/+/, '').replace(/\/+$/, '')
+
+        const directFiles: string[] = []
+        const directFolders: string[] = []
+
+        for (const [entryPath, entry] of Object.entries(entries)) {
+          const cleanPath = entryPath.replace(/\/+$/, '')
+          const parts = cleanPath.split('/')
+
+          let parentPath: string
+          if (parts.length === 1) {
+            parentPath = ''
+          } else {
+            parentPath = parts.slice(0, -1).join('/')
+          }
+
+          if (parentPath === normalizedPath) {
+            if (entry.isDir) {
+              directFolders.push(cleanPath) // 完整路径，无尾斜杠
+            } else {
+              directFiles.push(cleanPath) // 完整路径
+            }
+          }
+        }
+
+        return { files: directFiles, folders: directFolders }
       }),
       readBinary: vi.fn().mockImplementation((path: string) => {
-        const f = files[path]
+        const f = entries[path]
         if (f?.isDir) throw new Error('Cannot read directory')
         return new TextEncoder().encode(f?.content ?? '').buffer
       }),
       stat: vi.fn().mockImplementation((path: string) => {
-        const f = files[path]
+        // 支持目录以 'folder/' 或 'folder' 形式存储
+        let f = entries[path]
+        if (!f) f = entries[path + '/']
         return { mtime: f?.mtime ?? 0, size: f?.content?.length ?? 0, type: f?.isDir ? 'folder' : 'file' }
       }),
     },

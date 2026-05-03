@@ -29,8 +29,6 @@ export class SyncDB {
     SyncDB.setMeta(db, 'version', '1')
     SyncDB.setMeta(db, 'created_at', String(Date.now()))
 
-    const { files, folders } = await vault.adapter.list('/')
-
     const defaultOptions = { caseSensitive: false }
     const excludeGlobs: GlobMatch[] = filterRules.exclude.map(
       (p) => new GlobMatch(p, defaultOptions)
@@ -43,37 +41,46 @@ export class SyncDB {
       return needIncludeFromGlobRules(path, includeGlobs, excludeGlobs)
     }
 
-    // 插入目录
-    const allFolders = new Set<string>()
-    for (const folder of folders) {
-      const normalizedFolder = folder.replace(/\/$/, '')
-      if (!isIncluded(normalizedFolder)) continue
-      allFolders.add(normalizedFolder)
-      // 同时确保父目录存在（递归向上收集）
-      const parts = normalizedFolder.split('/')
-      for (let i = 1; i < parts.length; i++) {
-        const parentPath = parts.slice(0, i).join('/')
-        // 检查父目录是否被排除规则过滤
-        if (!isIncluded(parentPath)) continue
-        allFolders.add(parentPath)
-      }
-    }
-
     const insertStmt = db.prepare(
       'INSERT OR REPLACE INTO files (path, mtime, size, hash, is_dir) VALUES (?, ?, ?, ?, ?)'
     )
 
-    for (const folder of allFolders) {
-      insertStmt.run([folder, 0, 0, '', 1])
+    // BFS traversal to recursively discover all files and directories
+    const queue: string[] = ['/']
+    const allFolders = new Set<string>()
+
+    while (queue.length > 0) {
+      const currentDir = queue.shift()!
+      const { files = [], folders = [] } = await vault.adapter.list(currentDir)
+
+      // Process subdirectories
+      for (const folder of folders) {
+        const normalizedFolder = folder.replace(/\/$/, '')
+        if (!isIncluded(normalizedFolder)) continue
+        allFolders.add(normalizedFolder)
+        // Ensure parent directories exist (defensive: upward collection)
+        const parts = normalizedFolder.split('/')
+        for (let i = 1; i < parts.length; i++) {
+          const parentPath = parts.slice(0, i).join('/')
+          if (!isIncluded(parentPath)) continue
+          allFolders.add(parentPath)
+        }
+        queue.push(normalizedFolder)
+      }
+
+      // Process files
+      for (const filePath of files) {
+        if (!isIncluded(filePath)) continue
+        const content = await vault.adapter.readBinary(filePath)
+        const stat = await vault.adapter.stat(filePath)
+        const hash = await sha256Hex(content)
+        insertStmt.run([filePath, stat?.mtime ?? 0, stat?.size ?? 0, hash, 0])
+      }
     }
 
-    // 插入文件
-    for (const filePath of files) {
-      if (!isIncluded(filePath)) continue
-      const content = await vault.adapter.readBinary(filePath)
-      const stat = await vault.adapter.stat(filePath)
-      const hash = await sha256Hex(content)
-      insertStmt.run([filePath, stat?.mtime ?? 0, stat?.size ?? 0, hash, 0])
+    // Insert all directories after collecting them
+    for (const folder of allFolders) {
+      insertStmt.run([folder, 0, 0, '', 1])
     }
 
     insertStmt.free()
@@ -82,8 +89,17 @@ export class SyncDB {
 
   static async fromBuffer(buffer: ArrayBuffer): Promise<SyncDB> {
     const sql = await initSqlJs()
-    const db = new sql.Database(new Uint8Array(buffer))
-    return new SyncDB(db)
+    try {
+      const db = new sql.Database(new Uint8Array(buffer))
+      // Validate that the buffer contains a valid SQLite database
+      db.exec('SELECT count(*) FROM sqlite_master')
+      return new SyncDB(db)
+    } catch (err) {
+      throw new Error(
+        'Failed to load SyncDB from buffer: invalid or corrupt SQLite data',
+        { cause: err },
+      )
+    }
   }
 
   static async empty(deviceId: string): Promise<SyncDB> {
@@ -104,12 +120,17 @@ export class SyncDB {
     const results = this.sqlDb.exec('SELECT path, mtime, size, hash, is_dir FROM files')
     if (results.length === 0) return []
     const { columns, values } = results[0]
+    const pathIdx = columns.indexOf('path')
+    const mtimeIdx = columns.indexOf('mtime')
+    const sizeIdx = columns.indexOf('size')
+    const hashIdx = columns.indexOf('hash')
+    const isDirIdx = columns.indexOf('is_dir')
     return values.map(row => ({
-      path: row[columns.indexOf('path')] as string,
-      mtime: row[columns.indexOf('mtime')] as number,
-      size: row[columns.indexOf('size')] as number,
-      hash: row[columns.indexOf('hash')] as string,
-      isDir: row[columns.indexOf('is_dir')] as number,
+      path: row[pathIdx] as string,
+      mtime: row[mtimeIdx] as number,
+      size: row[sizeIdx] as number,
+      hash: row[hashIdx] as string,
+      isDir: row[isDirIdx] as number,
     }))
   }
 
