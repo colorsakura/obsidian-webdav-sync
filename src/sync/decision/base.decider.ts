@@ -1,33 +1,23 @@
-import type { SyncRecord } from '~/storage/sync-record'
-import type { MaybePromise } from '~/utils/types'
 import type { NutstoreSync } from '..'
-import type { BaseTask } from '../tasks/task.interface'
+import type { WebDAVClient } from 'webdav'
+import type { Vault } from 'obsidian'
 
-export default abstract class BaseSyncDecider {
-	constructor(
-		protected sync: NutstoreSync,
-		protected syncRecordStorage: SyncRecord,
-	) {}
+export default class BaseSyncDecider {
+  constructor(public sync: NutstoreSync) {}
 
-	abstract decide(): MaybePromise<BaseTask[]>
+  get webdav(): WebDAVClient {
+    return this.sync.webdav
+  }
 
-	protected getSyncRecordStorage() {
-		return this.syncRecordStorage
-	}
+  get vault(): Vault {
+    return this.sync.vault
+  }
 
-	get webdav() {
-		return this.sync.webdav
-	}
+  get remoteBaseDir(): string {
+    return this.sync.remoteBaseDir
+  }
 
-	get settings() {
-		return this.sync.settings
-	}
-
-	get vault() {
-		return this.sync.vault
-	}
-
-	get remoteBaseDir() {
-		return this.sync.remoteBaseDir
-	}
+  get settings() {
+    return this.sync.settings
+  }
 }
