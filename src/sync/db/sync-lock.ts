@@ -1,6 +1,9 @@
 import type { WebDAVClient } from 'webdav';
 import logger from '~/utils/logger';
 
+/** 最大获取锁尝试次数，配合指数退避 (2^attempt ms) */
+const MAX_ACQUIRE_ATTEMPTS = 30;
+
 interface LockData {
   deviceId: string;
   acquiredAt: number;
@@ -29,7 +32,7 @@ export class SyncLock {
   async acquire(): Promise<boolean> {
     const token = crypto.randomUUID();
 
-    for (let attempt = 0; attempt < 30; attempt++) {
+    for (let attempt = 0; attempt < MAX_ACQUIRE_ATTEMPTS; attempt++) {
       try {
         const content = await this.webdav.getFileContents(this.lockPath, { format: 'text' });
         const lock: LockData = typeof content === 'string' ? JSON.parse(content) : content;
@@ -74,9 +77,21 @@ export class SyncLock {
           return true;
         }
         logger.debug('SyncLock: token 验证失败，锁被其他设备抢占');
+        // 尝试清理我们写入的锁文件
+        try {
+          await this.webdav.deleteFile(this.lockPath);
+        } catch {
+          // 清理失败，忽略
+        }
         return false;
       } catch {
         logger.debug('SyncLock: 回读验证失败');
+        // 尝试清理我们可能写入的锁文件
+        try {
+          await this.webdav.deleteFile(this.lockPath);
+        } catch {
+          // 清理失败，忽略
+        }
         return false;
       }
     }

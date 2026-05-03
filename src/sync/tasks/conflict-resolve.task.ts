@@ -4,8 +4,6 @@ import { bufferLikeToArrayBuffer } from '~/utils/buffer-like'
 import { decrypt, encrypt } from '~/crypto'
 import i18n from '~/i18n'
 import type { StatModel } from '~/model/stat.model'
-import type { SyncRecordModel } from '~/model/sync-record.model'
-import { blobStore } from '~/storage/blob'
 import { isMergeablePath } from '~/sync/utils/is-mergeable-path'
 import { isSameTime } from '~/utils/is-same-time'
 import logger from '~/utils/logger'
@@ -26,7 +24,7 @@ export { ConflictStrategy }
 export default class ConflictResolveTask extends BaseTask {
 	constructor(
 		public readonly options: BaseTaskOptions & {
-			record?: SyncRecordModel
+			record?: { local: { mtime: number; size: number }; remote: { mtime: number; size: number }; base?: { key: string } }
 			strategy: ConflictStrategy
 			remoteStat?: StatModel
 			localStat?: StatModel
@@ -178,13 +176,6 @@ export default class ConflictResolveTask extends BaseTask {
 				return { success: true } as const
 			}
 
-			const { record } = this.options
-			let baseBlob: Blob | null = null
-			const baseKey = record?.base?.key
-			if (baseKey) {
-				baseBlob = await blobStore.get(baseKey)
-			}
-
 			const localIsMergeable = isMergeablePath(this.localPath)
 			const remoteIsMergeable = isMergeablePath(this.remotePath)
 
@@ -194,12 +185,11 @@ export default class ConflictResolveTask extends BaseTask {
 
 			const localText = await new Blob([new Uint8Array(localBuffer)]).text()
 			const remoteText = await new Blob([new Uint8Array(remoteContent)]).text()
-			const baseText = (await baseBlob?.text()) ?? localText
 
 			const mergeResult = await resolveByIntelligentMerge({
 				localContentText: localText,
 				remoteContentText: remoteText,
-				baseContentText: baseText,
+				baseContentText: localText,
 			})
 
 			if (!mergeResult.success) {
@@ -271,12 +261,6 @@ export default class ConflictResolveTask extends BaseTask {
 				return { success: true } as const
 			}
 
-			const { record } = this.options
-			let baseBlob: Blob | null = null
-			const baseKey = record?.base?.key
-			if (baseKey) {
-				baseBlob = await blobStore.get(baseKey)
-			}
 
 			const localIsMergeable = isMergeablePath(this.localPath)
 			const remoteIsMergeable = isMergeablePath(this.remotePath)
@@ -287,17 +271,16 @@ export default class ConflictResolveTask extends BaseTask {
 
 			const localText = await new Blob([new Uint8Array(localBuffer)]).text()
 			const remoteText = await new Blob([new Uint8Array(remoteContent)]).text()
-			const baseText = (await baseBlob?.text()) ?? localText
 
 			const mergeResult = await resolveByIntelligentMerge({
 				localContentText: localText,
 				remoteContentText: remoteText,
-				baseContentText: baseText,
+				baseContentText: localText,
 			})
 
 			if (!mergeResult.success) {
 				// If patch_apply fails to resolve all, use mergeDigIn as a further fallback
-				const mergeDigInResult = mergeDigIn(localText, baseText, remoteText, {
+				const mergeDigInResult = mergeDigIn(localText, localText, remoteText, {
 					stringSeparator: '\n',
 					useGitStyle: this.options.useGitStyle,
 				})

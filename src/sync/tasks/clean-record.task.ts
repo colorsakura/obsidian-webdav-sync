@@ -1,19 +1,12 @@
-import logger from '~/utils/logger'
-import { BaseTask, toTaskError } from './task.interface'
+import { BaseTask } from './task.interface'
 
+/**
+ * CleanRecordTask — 清理已删除文件的同步记录。
+ * 在新的 DB 架构中，DB 每次同步重建，无需显式清理旧记录。
+ * 此任务仅返回成功，不执行任何操作。
+ */
 export default class CleanRecordTask extends BaseTask {
-	async exec() {
-		try {
-			const syncRecord = this.syncRecord
-			await syncRecord.deleteFileRecord(this.localPath)
-
-			return { success: true, skipRecord: true } as const
-		} catch (e) {
-			logger.error(this, e)
-			return {
-				success: false,
-				error: toTaskError(e, this),
-			}
-		}
+	exec() {
+		return { success: true, skipRecord: true } as const
 	}
 }

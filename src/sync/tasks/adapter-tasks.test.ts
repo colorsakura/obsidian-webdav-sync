@@ -11,8 +11,6 @@ import ConflictResolveTask, { ConflictStrategy } from './conflict-resolve.task'
 import PullTask from './pull.task'
 import PushTask from './push.task'
 
-const syncRecordStub = {} as never
-
 function createVault() {
 	return {
 		adapter: {
@@ -61,7 +59,6 @@ describe('PullTask', () => {
 			remoteBaseDir: '/remote',
 			remotePath: 'folder/file.bin',
 			localPath: 'folder/file.bin',
-			syncRecord: syncRecordStub,
 			remoteSize: 3,
 		})
 
@@ -89,7 +86,6 @@ describe('PushTask', () => {
 			remoteBaseDir: '/remote',
 			remotePath: 'file.bin',
 			localPath: 'file.bin',
-			syncRecord: syncRecordStub,
 		})
 
 		await expect(task.exec()).resolves.toEqual({ success: true })
@@ -119,7 +115,6 @@ describe('ConflictResolveTask', () => {
 			remoteBaseDir: '/remote',
 			remotePath: 'note.md',
 			localPath: 'note.md',
-			syncRecord: syncRecordStub,
 			strategy: ConflictStrategy.LatestTimeStamp,
 			useGitStyle: false,
 			localStat: {
@@ -161,7 +156,6 @@ describe('ConflictResolveTask', () => {
 			remoteBaseDir: '/remote',
 			remotePath: 'note.md',
 			localPath: 'note.md',
-			syncRecord: syncRecordStub,
 			strategy: ConflictStrategy.DiffMatchPatch,
 			useGitStyle: false,
 			record: {

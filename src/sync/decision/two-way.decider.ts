@@ -80,9 +80,6 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
       webdav: this.webdav,
       vault: this.vault,
       remoteBaseDir: this.remoteBaseDir,
-      // Task 8 will remove syncRecord from task constructors.
-      // For now, pass null to maintain compatibility.
-      syncRecord: null as any,
     }
   }
 }

@@ -96,7 +96,6 @@ export class SyncDB {
     } catch (err) {
       throw new Error(
         'Failed to load SyncDB from buffer: invalid or corrupt SQLite data',
-        { cause: err },
       )
     }
   }
@@ -112,7 +111,7 @@ export class SyncDB {
   }
 
   toBuffer(): ArrayBuffer {
-    return this.sqlDb.export().buffer
+    return this.sqlDb.export().buffer as ArrayBuffer
   }
 
   getAllFiles(): DBFile[] {

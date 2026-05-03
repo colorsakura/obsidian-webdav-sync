@@ -17,7 +17,6 @@ import { isSub } from '~/utils/is-sub'
 import { stdRemotePath } from '~/utils/std-remote-path'
 import { ResumableWebDAVTraversal } from '~/utils/traverse-webdav'
 import type AbstractFileSystem from './fs.interface'
-import completeLossDir from './utils/complete-loss-dir'
 
 export class WebDAVRemoteFileSystem implements AbstractFileSystem {
 	private webdav: WebDAVClient
@@ -109,8 +108,7 @@ export class WebDAVRemoteFileSystem implements AbstractFileSystem {
 		const includedStats = stats.filter((stat) =>
 			needIncludeFromGlobRules(stat.path, inclusions, exclusions),
 		)
-		const completeStats = completeLossDir(stats, includedStats)
-		const completeStatPaths = new Set(completeStats.map((s) => s.path))
+		const completeStatPaths = new Set(includedStats.map((s) => s.path))
 		const results = stats.map((stat) => ({
 			stat,
 			ignored: !completeStatPaths.has(stat.path),

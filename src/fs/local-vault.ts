@@ -1,6 +1,5 @@
 import type { Vault } from 'obsidian'
 import { useSettings } from '~/settings'
-import type { SyncRecord } from '~/storage/sync-record'
 import type { ConfigDirSyncMode } from '~/utils/config-dir-rules'
 import { computeEffectiveFilterRulesFromParts } from '~/utils/config-dir-rules'
 import type { GlobMatchOptions } from '~/utils/glob-match'
@@ -10,13 +9,11 @@ import GlobMatch, {
 } from '~/utils/glob-match'
 import { traverseLocalVault } from '~/utils/traverse-local-vault'
 import type AbstractFileSystem from './fs.interface'
-import completeLossDir from './utils/complete-loss-dir'
 
 export class LocalVaultFileSystem implements AbstractFileSystem {
 	constructor(
 		private readonly options: {
 			vault: Vault
-			syncRecord: SyncRecord
 			filterRules?: {
 				exclusionRules: GlobMatchOptions[]
 				inclusionRules: GlobMatchOptions[]
@@ -47,8 +44,7 @@ export class LocalVaultFileSystem implements AbstractFileSystem {
 		const includedStats = stats.filter((stat) =>
 			needIncludeFromGlobRules(stat.path, inclusions, exclusions),
 		)
-		const completeStats = completeLossDir(stats, includedStats)
-		const completeStatPaths = new Set(completeStats.map((s) => s.path))
+		const completeStatPaths = new Set(includedStats.map((s) => s.path))
 		return stats.map((stat) => ({
 			stat,
 			ignored: !completeStatPaths.has(stat.path),

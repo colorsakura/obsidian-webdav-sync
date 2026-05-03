@@ -1,19 +1,15 @@
 import { Modal, Setting } from 'obsidian'
 import i18n from '~/i18n'
-import { blobKV, syncRecordKV, traverseWebDAVKV } from '~/storage/kv'
+import { traverseWebDAVKV } from '~/storage/kv'
 import logger from '~/utils/logger'
 import type NutstorePlugin from '..'
 
 export interface CacheClearOptions {
-	syncRecordEnabled: boolean
-	blobEnabled: boolean
 	traverseWebDAVEnabled: boolean
 }
 
 export default class CacheClearModal extends Modal {
 	private options: CacheClearOptions = {
-		syncRecordEnabled: false,
-		blobEnabled: false,
 		traverseWebDAVEnabled: false,
 	}
 
@@ -34,26 +30,6 @@ export default class CacheClearModal extends Modal {
 		const optionsContainer = contentEl.createDiv({
 			cls: 'py-2',
 		})
-
-		// Sync Record Cache Option
-		new Setting(optionsContainer)
-			.setName(i18n.t('settings.cache.clearModal.syncRecordCache.name'))
-			.setDesc(i18n.t('settings.cache.clearModal.syncRecordCache.desc'))
-			.addToggle((toggle) => {
-				toggle.setValue(this.options.syncRecordEnabled).onChange((value) => {
-					this.options.syncRecordEnabled = value
-				})
-			})
-
-		// Blob Cache Option
-		new Setting(optionsContainer)
-			.setName(i18n.t('settings.cache.clearModal.blobCache.name'))
-			.setDesc(i18n.t('settings.cache.clearModal.blobCache.desc'))
-			.addToggle((toggle) => {
-				toggle.setValue(this.options.blobEnabled).onChange((value) => {
-					this.options.blobEnabled = value
-				})
-			})
 
 		// TraverseWebDAV Cache Option
 		new Setting(optionsContainer)
@@ -123,20 +99,10 @@ export default class CacheClearModal extends Modal {
 	 * Static method to clear selected caches
 	 */
 	static async clearSelectedCaches(options: CacheClearOptions) {
-		const { syncRecordEnabled, blobEnabled, traverseWebDAVEnabled } = options
+		const { traverseWebDAVEnabled } = options
 		const cleared = []
 
 		try {
-			if (syncRecordEnabled) {
-				await syncRecordKV.clear()
-				cleared.push(i18n.t('settings.cache.clearModal.syncRecordCache.name'))
-			}
-
-			if (blobEnabled) {
-				await blobKV.clear()
-				cleared.push(i18n.t('settings.cache.clearModal.blobCache.name'))
-			}
-
 			if (traverseWebDAVEnabled) {
 				await traverseWebDAVKV.clear()
 				cleared.push(

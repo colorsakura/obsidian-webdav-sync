@@ -2,8 +2,6 @@ import type { Vault } from 'obsidian'
 import { normalizePath } from 'obsidian'
 import { isAbsolute, join } from 'path-browserify'
 import type { WebDAVClient } from 'webdav'
-import type { SyncRecord } from '~/storage/sync-record'
-import getTaskName from '~/utils/get-task-name'
 import type { MaybePromise } from '~/utils/types'
 
 export interface BaseTaskOptions {
@@ -12,7 +10,6 @@ export interface BaseTaskOptions {
 	remoteBaseDir: string
 	remotePath: string
 	localPath: string
-	syncRecord: SyncRecord
 	/** 端到端加密密钥，未启用加密时为 null */
 	encryptionKey?: CryptoKey | null
 }
@@ -37,10 +34,6 @@ export abstract class BaseTask {
 		return this.options.vault
 	}
 
-	get syncRecord() {
-		return this.options.syncRecord
-	}
-
 	get webdav() {
 		return this.options.webdav
 	}
@@ -63,7 +56,7 @@ export abstract class BaseTask {
 
 	toJSON() {
 		const { localPath, remoteBaseDir, remotePath } = this
-		const taskName = getTaskName(this)
+		const taskName = this.constructor.name
 		return {
 			taskName,
 			localPath,

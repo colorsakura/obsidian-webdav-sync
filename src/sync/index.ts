@@ -344,7 +344,6 @@ export class NutstoreSync {
 									remoteBaseDir: this.remoteBaseDir,
 									remotePath: parentRemotePath,
 									localPath: parentLocalPath,
-									syncRecord: null as any,
 									encryptionKey,
 								})
 								mkdirTasksMap.set(parentRemotePath, mkdirTask)

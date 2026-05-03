@@ -55,8 +55,15 @@ describe('SyncLock', () => {
     });
 
     it('应该在锁未过期时获取失败', async () => {
-      // 切换到真实定时器，mock setTimeout 使其通过 queueMicrotask 立即触发，
-      // 这样 30 轮 backoff 都在 microtask 中完成，不会导致 fake timers 兼容问题
+      // 注意: 这里不能使用 fake timers (vi.useFakeTimers)，原因是:
+      // fake timers 推进时间时也会推进 Date.now()，导致锁的 age 逐渐增大，
+      // 在 MAX_ACQUIRE_ATTEMPTS=30 轮指数退避过程中锁会过期，从而使测试
+      // 错误地通过 (acquire 会抢占过期锁成功)。
+      //
+      // 因此使用 realTimers + mocked setTimeout (queueMicrotask 立即触发)
+      // + mocked Date.now (固定时间，锁永不过期)，让所有退避轮次瞬间完成。
+      // 若 bun vitest 未来支持在不推进 Date.now 的情况下仅触发定时器，
+      // 可以改用 fake timers 简化此测试。
       vi.useRealTimers();
       vi.spyOn(Date, 'now').mockReturnValue(1700000000000);
 
@@ -122,6 +129,30 @@ describe('SyncLock', () => {
 
       await lock.release();
       // 不应该抛出异常
+    });
+
+    it('当锁被其他设备抢占时不应该删除锁文件', async () => {
+      const webdav = createMockWebdav();
+      const lock = new SyncLock(webdav, '/remote', 'device-1', 300000);
+
+      // 正常获取锁
+      await lock.acquire();
+      expect(lock.isHeld).toBe(true);
+
+      // 模拟其他设备覆盖了锁（token 变化）
+      await webdav.putFileContents('/remote/_sync/lock', JSON.stringify({
+        deviceId: 'device-2',
+        acquiredAt: Date.now(),
+        version: 1,
+        token: 'other-device-token',
+      }));
+
+      // release 应该检测到 token 不匹配，不删除锁文件
+      await lock.release();
+
+      expect(lock.isHeld).toBe(false);
+      // acquire 不调用 deleteFile，release 因 token 不匹配也不应调用
+      expect(webdav.deleteFile).not.toHaveBeenCalled();
     });
   });
 });
