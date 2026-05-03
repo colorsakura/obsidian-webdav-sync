@@ -15,6 +15,7 @@ export class SyncLock {
 	private _held = false
 	private token: string | null = null
 	private lockPath: string
+	private syncDirPath: string
 
 	constructor(
 		private webdav: WebDAVClient,
@@ -23,6 +24,7 @@ export class SyncLock {
 		private timeoutMs: number = 5 * 60 * 1000,
 	) {
 		this.lockPath = `${remoteBaseDir.replace(/\/$/, '')}/_sync/lock`
+		this.syncDirPath = `${remoteBaseDir.replace(/\/$/, '')}/_sync`
 	}
 
 	get isHeld(): boolean {
@@ -68,14 +70,32 @@ export class SyncLock {
 				token,
 			}
 
-			await this.webdav.putFileContents(
-				this.lockPath,
-				JSON.stringify(lockData),
-				{
-					contentLength: false,
-					overwrite: true,
-				},
-			)
+			try {
+				await this.webdav.putFileContents(
+					this.lockPath,
+					JSON.stringify(lockData),
+					{
+						contentLength: false,
+						overwrite: true,
+					},
+				)
+			} catch (e: any) {
+				if (e.status === 409) {
+					// _sync directory doesn't exist, create it and retry
+					logger.debug('SyncLock: 创建 _sync 目录')
+					await this.webdav.createDirectory(this.syncDirPath)
+					await this.webdav.putFileContents(
+						this.lockPath,
+						JSON.stringify(lockData),
+						{
+							contentLength: false,
+							overwrite: true,
+						},
+					)
+				} else {
+					throw e
+				}
+			}
 
 			// 回读验证
 			try {
