@@ -1,6 +1,5 @@
 import initSqlJs, {
 	type Database as SqlJsDatabase,
-	type SqlJsConfig,
 } from 'sql.js'
 import type { Vault } from 'obsidian'
 import { sha256Hex } from '~/utils/sha256'
@@ -8,15 +7,24 @@ import GlobMatch, {
 	needIncludeFromGlobRules,
 	type GlobMatchOptions,
 } from '~/utils/glob-match'
+import wasmBase64 from './wasm-binary'
 
-let _sqlJsConfig: SqlJsConfig | undefined
+let _wasmBinary: ArrayBuffer | null = null
 
-export function configureSqlJs(config: SqlJsConfig): void {
-	_sqlJsConfig = config
+function getWasmBinary(): ArrayBuffer {
+	if (!_wasmBinary) {
+		const binaryStr = atob(wasmBase64)
+		const bytes = new Uint8Array(binaryStr.length)
+		for (let i = 0; i < binaryStr.length; i++) {
+			bytes[i] = binaryStr.charCodeAt(i)
+		}
+		_wasmBinary = bytes.buffer
+	}
+	return _wasmBinary
 }
 
 async function getSql() {
-	return initSqlJs(_sqlJsConfig)
+	return initSqlJs({ wasmBinary: getWasmBinary() })
 }
 
 export interface DBFile {

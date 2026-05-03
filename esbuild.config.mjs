@@ -10,23 +10,34 @@ dotenv.config()
 
 const prod = process.argv[2] === 'production'
 
+// Read sql.js WASM binary and encode as base64 for inline bundling
+const wasmBase64 = readFileSync(
+	'./node_modules/sql.js/dist/sql-wasm-browser.wasm',
+).toString('base64')
+
+// Replace the wasm-binary.ts module with inlined base64 at build time
+const inlineWasmPlugin = {
+	name: 'inline-wasm-plugin',
+	setup(build) {
+		build.onResolve(
+			{ filter: /wasm-binary$/ },
+			(args) => ({ path: args.path, namespace: 'wasm-inline' }),
+		)
+		build.onLoad(
+			{ filter: /.*/, namespace: 'wasm-inline' },
+			() => ({
+				contents: `export default ${JSON.stringify(wasmBase64)}`,
+				loader: 'js',
+			}),
+		)
+	},
+}
+
 const renamePlugin = {
 	name: 'rename-plugin',
 	setup(build) {
 		build.onEnd(async () => {
 			fs.renameSync('./main.css', './styles.css')
-		})
-	},
-}
-
-const copyWasmPlugin = {
-	name: 'copy-wasm-plugin',
-	setup(build) {
-		build.onEnd(async () => {
-			fs.copyFileSync(
-				'./node_modules/sql.js/dist/sql-wasm-browser.wasm',
-				'./sql-wasm-browser.wasm',
-			)
 		})
 	},
 }
@@ -65,8 +76,8 @@ const context = await esbuild.context({
 		postcss({
 			plugins: [postcssMergeRules()],
 		}),
+		inlineWasmPlugin,
 		renamePlugin,
-			copyWasmPlugin,
 	],
 })
 
