@@ -62,8 +62,12 @@ export default class WebdavSyncPlugin extends Plugin {
 		const adapter = this.app.vault.adapter as any
 		if (adapter.basePath) {
 			const pluginDir = `${adapter.basePath}/.obsidian/plugins/${this.manifest.id}/`
+			// Electron requires file:// protocol to load local WASM files
+			const baseUrl = pluginDir.startsWith('file://')
+				? pluginDir
+				: 'file://' + pluginDir
 			configureSqlJs({
-				locateFile: (file: string) => pluginDir + file,
+				locateFile: (file: string) => baseUrl + file,
 			})
 		}
 
