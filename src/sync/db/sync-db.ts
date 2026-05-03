@@ -1,0 +1,197 @@
+import initSqlJs, { type Database as SqlJsDatabase } from 'sql.js'
+import type { Vault } from 'obsidian'
+import { sha256Hex } from '~/utils/sha256'
+import GlobMatch, { needIncludeFromGlobRules } from '~/utils/glob-match'
+
+export interface DBFile {
+  path: string
+  mtime: number
+  size: number
+  hash: string
+  isDir: number  // SQLite 用 0/1
+}
+
+export interface FilterRules {
+  exclude: string[]
+  include: string[]
+}
+
+export class SyncDB {
+  private constructor(private sqlDb: SqlJsDatabase) {}
+
+  static async fromVault(vault: Vault, filterRules: FilterRules): Promise<SyncDB> {
+    const sql = await initSqlJs()
+    const db = new sql.Database()
+    SyncDB.initSchema(db)
+
+    const deviceId = crypto.randomUUID()
+    SyncDB.setMeta(db, 'device_id', deviceId)
+    SyncDB.setMeta(db, 'version', '1')
+    SyncDB.setMeta(db, 'created_at', String(Date.now()))
+
+    const { files, folders } = await vault.adapter.list('/')
+
+    const defaultOptions = { caseSensitive: false }
+    const excludeGlobs: GlobMatch[] = filterRules.exclude.map(
+      (p) => new GlobMatch(p, defaultOptions)
+    )
+    const includeGlobs: GlobMatch[] = filterRules.include.map(
+      (p) => new GlobMatch(p, defaultOptions)
+    )
+
+    const isIncluded = (path: string): boolean => {
+      return needIncludeFromGlobRules(path, includeGlobs, excludeGlobs)
+    }
+
+    // 插入目录
+    const allFolders = new Set<string>()
+    for (const folder of folders) {
+      const normalizedFolder = folder.replace(/\/$/, '')
+      if (!isIncluded(normalizedFolder)) continue
+      allFolders.add(normalizedFolder)
+      // 同时确保父目录存在（递归向上收集）
+      const parts = normalizedFolder.split('/')
+      for (let i = 1; i < parts.length; i++) {
+        const parentPath = parts.slice(0, i).join('/')
+        // 检查父目录是否被排除规则过滤
+        if (!isIncluded(parentPath)) continue
+        allFolders.add(parentPath)
+      }
+    }
+
+    const insertStmt = db.prepare(
+      'INSERT OR REPLACE INTO files (path, mtime, size, hash, is_dir) VALUES (?, ?, ?, ?, ?)'
+    )
+
+    for (const folder of allFolders) {
+      insertStmt.run([folder, 0, 0, '', 1])
+    }
+
+    // 插入文件
+    for (const filePath of files) {
+      if (!isIncluded(filePath)) continue
+      const content = await vault.adapter.readBinary(filePath)
+      const stat = await vault.adapter.stat(filePath)
+      const hash = await sha256Hex(content)
+      insertStmt.run([filePath, stat?.mtime ?? 0, stat?.size ?? 0, hash, 0])
+    }
+
+    insertStmt.free()
+    return new SyncDB(db)
+  }
+
+  static async fromBuffer(buffer: ArrayBuffer): Promise<SyncDB> {
+    const sql = await initSqlJs()
+    const db = new sql.Database(new Uint8Array(buffer))
+    return new SyncDB(db)
+  }
+
+  static async empty(deviceId: string): Promise<SyncDB> {
+    const sql = await initSqlJs()
+    const db = new sql.Database()
+    SyncDB.initSchema(db)
+    SyncDB.setMeta(db, 'device_id', deviceId)
+    SyncDB.setMeta(db, 'version', '1')
+    SyncDB.setMeta(db, 'created_at', String(Date.now()))
+    return new SyncDB(db)
+  }
+
+  toBuffer(): ArrayBuffer {
+    return this.sqlDb.export().buffer
+  }
+
+  getAllFiles(): DBFile[] {
+    const results = this.sqlDb.exec('SELECT path, mtime, size, hash, is_dir FROM files')
+    if (results.length === 0) return []
+    const { columns, values } = results[0]
+    return values.map(row => ({
+      path: row[columns.indexOf('path')] as string,
+      mtime: row[columns.indexOf('mtime')] as number,
+      size: row[columns.indexOf('size')] as number,
+      hash: row[columns.indexOf('hash')] as string,
+      isDir: row[columns.indexOf('is_dir')] as number,
+    }))
+  }
+
+  getFile(path: string): DBFile | undefined {
+    const stmt = this.sqlDb.prepare('SELECT path, mtime, size, hash, is_dir FROM files WHERE path = ?')
+    stmt.bind([path])
+    if (stmt.step()) {
+      const cols = stmt.getColumnNames()
+      const vals = stmt.get()
+      stmt.free()
+      return {
+        path: vals[cols.indexOf('path')] as string,
+        mtime: vals[cols.indexOf('mtime')] as number,
+        size: vals[cols.indexOf('size')] as number,
+        hash: vals[cols.indexOf('hash')] as string,
+        isDir: vals[cols.indexOf('is_dir')] as number,
+      }
+    }
+    stmt.free()
+    return undefined
+  }
+
+  getAllPaths(): Set<string> {
+    const results = this.sqlDb.exec('SELECT path FROM files')
+    if (results.length === 0) return new Set()
+    return new Set(results[0].values.map(row => row[0] as string))
+  }
+
+  upsertFile(file: DBFile): void {
+    this.sqlDb.run(
+      'INSERT OR REPLACE INTO files (path, mtime, size, hash, is_dir) VALUES (?, ?, ?, ?, ?)',
+      [file.path, file.mtime, file.size, file.hash, file.isDir]
+    )
+  }
+
+  deleteFile(path: string): void {
+    this.sqlDb.run('DELETE FROM files WHERE path = ?', [path])
+  }
+
+  getMeta(key: string): string | undefined {
+    const stmt = this.sqlDb.prepare('SELECT value FROM meta WHERE key = ?')
+    stmt.bind([key])
+    if (stmt.step()) {
+      const val = stmt.get()[0] as string
+      stmt.free()
+      return val
+    }
+    stmt.free()
+    return undefined
+  }
+
+  setMeta(key: string, value: string): void {
+    this.sqlDb.run('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)', [key, value])
+  }
+
+  get deviceId(): string {
+    return this.getMeta('device_id') ?? ''
+  }
+
+  get version(): number {
+    return parseInt(this.getMeta('version') ?? '1', 10)
+  }
+
+  private static initSchema(db: SqlJsDatabase): void {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS files (
+        path TEXT PRIMARY KEY,
+        mtime INTEGER NOT NULL,
+        size INTEGER NOT NULL,
+        hash TEXT NOT NULL,
+        is_dir INTEGER DEFAULT 0
+      )
+    `)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS meta (
+        key TEXT PRIMARY KEY,
+        value TEXT
+      )
+    `)
+  }
+
+  private static setMeta(db: SqlJsDatabase, key: string, value: string): void {
+    db.run('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)', [key, value])
+  }
+}
