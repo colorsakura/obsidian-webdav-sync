@@ -23,6 +23,9 @@ data.json
 
 # build output
 dist
+
+# worktrees
+.worktrees/
 styles.css
 main.js
 
