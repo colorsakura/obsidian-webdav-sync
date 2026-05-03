@@ -127,6 +127,7 @@ export default class WebdavSyncPlugin extends Plugin {
 				secretId: 'nutstore-encryption-key',
 				salt: '',
 				keyHash: '',
+				iterations: 0,
 			},
 		}
 

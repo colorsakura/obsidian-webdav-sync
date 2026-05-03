@@ -370,6 +370,7 @@ async function showPasswordChangeModal(
 						oldPassword,
 						plugin.settings.encryption.salt,
 						plugin.settings.encryption.keyHash,
+						plugin.settings.encryption.iterations,
 					)
 
 					if (!valid) {

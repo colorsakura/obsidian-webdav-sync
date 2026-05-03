@@ -10,7 +10,11 @@
 
 import type { App } from 'obsidian'
 import { fromUint8Array, toUint8Array } from 'js-base64'
-import { deriveKey } from './key-derivation'
+import {
+	deriveKey,
+	getPBKDF2Iterations,
+	DEFAULT_ITERATIONS,
+} from './key-derivation'
 import type { EncryptionSettings } from './types'
 
 /** SecretStorage 中存储密钥的 ID */
@@ -37,6 +41,25 @@ function hex2buf(hex: string): Uint8Array {
 }
 
 /**
+ * 派生密钥并计算 hash
+ */
+async function deriveAndHash(
+	password: string,
+	salt: Uint8Array,
+	iterations: number,
+): Promise<{ rawKey: Uint8Array; hexKey: string; hash: string }> {
+	const key = await deriveKey(password, salt, iterations)
+	const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', key))
+	const hexKey = buf2hex(rawKey)
+	const hashBuffer = await crypto.subtle.digest(
+		'SHA-256',
+		rawKey as BufferSource,
+	)
+	const hash = buf2hex(new Uint8Array(hashBuffer))
+	return { rawKey, hexKey, hash }
+}
+
+/**
  * 首次设置加密
  *
  * 流程:
@@ -54,25 +77,18 @@ export async function setupEncryption(
 	password: string,
 	encryption: EncryptionSettings,
 ): Promise<void> {
-	// 1. 生成随机 salt
 	const salt = crypto.getRandomValues(new Uint8Array(32))
+	const iterations = getPBKDF2Iterations()
 
-	// 2. 派生密钥
-	const key = await deriveKey(password, salt)
-	const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', key))
-	const hexKey = buf2hex(rawKey)
+	const { hexKey, hash } = await deriveAndHash(password, salt, iterations)
 
-	// 3. 存入 SecretStorage
 	await app.secretStorage.setSecret(SECRET_ID, hexKey)
 
-	// 4. 计算 keyHash
-	const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
-
-	// 5. 更新 encryption settings
 	encryption.enabled = true
 	encryption.secretId = SECRET_ID
 	encryption.salt = fromUint8Array(salt, true)
-	encryption.keyHash = buf2hex(new Uint8Array(hash))
+	encryption.keyHash = hash
+	encryption.iterations = iterations
 }
 
 /**
@@ -121,27 +137,57 @@ export async function loadEncryptionKey(
 }
 
 /**
+ * 尝试验证密码是否匹配
+ *
+ * 用指定的迭代次数派生密钥并比对 hash。
+ */
+async function tryVerify(
+	password: string,
+	salt: Uint8Array,
+	expectedHash: string,
+	iterations: number,
+): Promise<boolean> {
+	try {
+		const { hash } = await deriveAndHash(password, salt, iterations)
+		return hash === expectedHash
+	} catch {
+		return false
+	}
+}
+
+/** 可能的 PBKDF2 迭代次数（桌面 600K，移动 100K） */
+const ALL_POSSIBLE_ITERATIONS = [600_000, 100_000]
+
+/**
  * 验证密码是否正确
+ *
+ * 使用存储的迭代次数；若未存储（旧版配置），尝试所有可能的迭代次数。
  *
  * @param password - 待验证的密码
  * @param saltBase64 - base64 编码的 salt
  * @param expectedKeyHash - 期望的 keyHash (hex)
+ * @param iterations - PBKDF2 迭代次数（可选，未提供时尝试所有可能值）
  * @returns true 表示密码正确
  */
 export async function verifyPassword(
 	password: string,
 	saltBase64: string,
 	expectedKeyHash: string,
+	iterations?: number,
 ): Promise<boolean> {
-	try {
-		const salt = toUint8Array(saltBase64)
-		const key = await deriveKey(password, salt)
-		const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', key))
-		const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
-		return buf2hex(new Uint8Array(hash)) === expectedKeyHash
-	} catch {
-		return false
+	const salt = toUint8Array(saltBase64)
+
+	if (iterations && iterations > 0) {
+		return tryVerify(password, salt, expectedKeyHash, iterations)
 	}
+
+	// 旧版配置未存储迭代次数：尝试所有可能值
+	for (const it of ALL_POSSIBLE_ITERATIONS) {
+		if (await tryVerify(password, salt, expectedKeyHash, it)) {
+			return true
+		}
+	}
+	return false
 }
 
 /**
@@ -151,9 +197,11 @@ export async function verifyPassword(
  * 但 SecretStorage 中没有密钥。用户输入密码后重新派生
  * 密钥并存入 SecretStorage，不改变 salt。
  *
+ * 使用存储的迭代次数确保跨平台兼容；旧版配置自动回退尝试所有可能值。
+ *
  * @param app - Obsidian App 实例
  * @param password - 用户输入的密码
- * @param encryption - 已有的 encryption settings（含 salt 和 keyHash）
+ * @param encryption - 已有的 encryption settings（含 salt、keyHash、iterations）
  * @returns true 表示恢复成功，false 表示密码错误
  */
 export async function restoreEncryption(
@@ -162,15 +210,33 @@ export async function restoreEncryption(
 	encryption: EncryptionSettings,
 ): Promise<boolean> {
 	const salt = toUint8Array(encryption.salt)
-	const key = await deriveKey(password, salt)
-	const rawKey = new Uint8Array(await crypto.subtle.exportKey('raw', key))
+	const storedIterations = encryption.iterations
 
-	const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
-	if (buf2hex(new Uint8Array(hash)) !== encryption.keyHash) {
-		return false
+	let matchedIterations: number | null = null
+
+	if (storedIterations && storedIterations > 0) {
+		if (await tryVerify(password, salt, encryption.keyHash, storedIterations)) {
+			matchedIterations = storedIterations
+		}
+	} else {
+		// 旧版配置未存储迭代次数：尝试所有可能值
+		for (const it of ALL_POSSIBLE_ITERATIONS) {
+			if (await tryVerify(password, salt, encryption.keyHash, it)) {
+				matchedIterations = it
+				break
+			}
+		}
 	}
 
-	const hexKey = buf2hex(rawKey)
+	if (matchedIterations === null) return false
+
+	const { hexKey } = await deriveAndHash(password, salt, matchedIterations)
 	await app.secretStorage.setSecret(SECRET_ID, hexKey)
+
+	// 补齐迭代次数到配置中，后续不再需要重试
+	if (!encryption.iterations) {
+		encryption.iterations = matchedIterations
+	}
+
 	return true
 }

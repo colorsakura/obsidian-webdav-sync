@@ -484,3 +484,78 @@ describe('End-to-End Sync Flow', () => {
 		expect(matched).toBe(true)
 	})
 })
+
+// ─── Cross-Platform Iteration Compatibility ─────────────────────
+
+describe('Cross-Platform Iteration Compatibility', () => {
+	it('verifyPassword works cross-platform with explicit iterations', async () => {
+		const password = 'cross-platform-password'
+		const salt = crypto.getRandomValues(new Uint8Array(32))
+		const saltBase64 = btoa(String.fromCharCode(...salt))
+
+		// 模拟桌面端 (600K 迭代) 创建
+		const keyDesktop = await deriveKey(password, salt, 600_000)
+		const rawKeyDesktop = new Uint8Array(
+			await crypto.subtle.exportKey('raw', keyDesktop),
+		)
+		const hashDesktop = await crypto.subtle.digest(
+			'SHA-256',
+			rawKeyDesktop as BufferSource,
+		)
+		const keyHashDesktop = Array.from(new Uint8Array(hashDesktop))
+			.map((b) => b.toString(16).padStart(2, '0'))
+			.join('')
+
+		// 传入正确迭代次数 → 应成功
+		const valid = await verifyPassword(
+			password,
+			saltBase64,
+			keyHashDesktop,
+			600_000,
+		)
+		expect(valid).toBe(true)
+
+		// 传入错误迭代次数 → 应失败
+		const invalid = await verifyPassword(
+			password,
+			saltBase64,
+			keyHashDesktop,
+			100_000,
+		)
+		expect(invalid).toBe(false)
+	})
+
+	it('verifyPassword backward compat: auto-detects iterations when not stored', async () => {
+		const password = 'backward-compat-test'
+		const salt = crypto.getRandomValues(new Uint8Array(32))
+		const saltBase64 = btoa(String.fromCharCode(...salt))
+
+		// 模拟桌面端创建 (600K)
+		const { rawKey } = await createExtractableTestKey(password, salt)
+		const hash = await crypto.subtle.digest('SHA-256', rawKey as BufferSource)
+		const keyHash = Array.from(new Uint8Array(hash))
+			.map((b) => b.toString(16).padStart(2, '0'))
+			.join('')
+
+		// 不传 iterations → 自动尝试 600K 和 100K → 600K 命中
+		const valid = await verifyPassword(password, saltBase64, keyHash)
+		expect(valid).toBe(true)
+	})
+
+	it('different iterations produce different keys from same password+salt', async () => {
+		const password = 'same-everything'
+		const salt = crypto.getRandomValues(new Uint8Array(32))
+
+		const key600k = await deriveKey(password, salt, 600_000)
+		const key100k = await deriveKey(password, salt, 100_000)
+
+		// 用两个密钥分别加密
+		const data = str2ab('test-cross-iteration')
+		const encrypted600k = await encrypt(data, key600k)
+		const encrypted100k = await encrypt(data, key100k)
+
+		// 交叉解密应失败（不同迭代次数产生不同密钥）
+		await expect(decrypt(encrypted600k, key100k)).rejects.toThrow()
+		await expect(decrypt(encrypted100k, key600k)).rejects.toThrow()
+	})
+})

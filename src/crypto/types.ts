@@ -20,4 +20,6 @@ export interface EncryptionSettings {
 	salt: string
 	/** SHA-256(rawKey) hex，用于密码验证 */
 	keyHash: string
+	/** PBKDF2 迭代次数，跨平台恢复密钥时使用 */
+	iterations: number
 }
