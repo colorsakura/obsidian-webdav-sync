@@ -26,6 +26,11 @@ dist
 
 # worktrees
 .worktrees/
+
+# superpowers
+.agents/
+.claude/
+skills-lock.json
 styles.css
 main.js
 
