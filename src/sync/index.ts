@@ -132,7 +132,8 @@ export class NutstoreSync {
 			if (!remoteBaseDirExits) {
 				// DB may have been deleted — try to clean up lastSyncDB
 				try {
-					const key = 'last_sync_db::' + this.vault.getName() + '::' + remoteBaseDir
+					const key =
+						'last_sync_db::' + this.vault.getName() + '::' + remoteBaseDir
 					await (await import('localforage')).removeItem(key)
 				} catch {
 					// Ignore cleanup errors
@@ -187,7 +188,10 @@ export class NutstoreSync {
 				}
 
 				// Step 4: Load lastSyncDB
-				let lastSyncDB = await loadLastSyncDB(this.vault.getName(), remoteBaseDir)
+				let lastSyncDB = await loadLastSyncDB(
+					this.vault.getName(),
+					remoteBaseDir,
+				)
 				if (!lastSyncDB) {
 					lastSyncDB = await SyncDB.empty(deviceId)
 				}

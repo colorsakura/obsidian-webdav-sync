@@ -19,6 +19,18 @@ const renamePlugin = {
 	},
 }
 
+const copyWasmPlugin = {
+	name: 'copy-wasm-plugin',
+	setup(build) {
+		build.onEnd(async () => {
+			fs.copyFileSync(
+				'./node_modules/sql.js/dist/sql-wasm-browser.wasm',
+				'./sql-wasm-browser.wasm',
+			)
+		})
+	},
+}
+
 const context = await esbuild.context({
 	entryPoints: ['src/index.ts'],
 	bundle: true,
@@ -54,6 +66,7 @@ const context = await esbuild.context({
 			plugins: [postcssMergeRules()],
 		}),
 		renamePlugin,
+			copyWasmPlugin,
 	],
 })
 

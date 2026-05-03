@@ -27,7 +27,8 @@ import {
 	setPluginInstance,
 	SyncMode,
 } from './settings'
-import { ConflictStrategy } from './sync/tasks/conflict-resolve.task'
+import { configureSqlJs } from './sync/db/sync-db'
+import { ConflictStrategy } from '~/sync/tasks/conflict-strategy'
 import { GlobMatchOptions } from './utils/glob-match'
 import { stdRemotePath } from './utils/std-remote-path'
 
@@ -56,6 +57,15 @@ export default class WebdavSyncPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings()
 		this.addSettingTab(new NutstoreSettingTab(this.app, this))
+
+		// 配置 sql.js WASM 文件路径（由 esbuild copyWasmPlugin 复制到插件目录）
+		const adapter = this.app.vault.adapter as any
+		if (adapter.basePath) {
+			const pluginDir = `${adapter.basePath}/.obsidian/plugins/${this.manifest.id}/`
+			configureSqlJs({
+				locateFile: (file: string) => pluginDir + file,
+			})
+		}
 
 		setPluginInstance(this)
 

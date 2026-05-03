@@ -24,7 +24,11 @@ export { ConflictStrategy }
 export default class ConflictResolveTask extends BaseTask {
 	constructor(
 		public readonly options: BaseTaskOptions & {
-			record?: { local: { mtime: number; size: number }; remote: { mtime: number; size: number }; base?: { key: string } }
+			record?: {
+				local: { mtime: number; size: number }
+				remote: { mtime: number; size: number }
+				base?: { key: string }
+			}
 			strategy: ConflictStrategy
 			remoteStat?: StatModel
 			localStat?: StatModel
@@ -260,7 +264,6 @@ export default class ConflictResolveTask extends BaseTask {
 			if (isEqual(localBuffer, remoteContent)) {
 				return { success: true } as const
 			}
-
 
 			const localIsMergeable = isMergeablePath(this.localPath)
 			const remoteIsMergeable = isMergeablePath(this.remotePath)
