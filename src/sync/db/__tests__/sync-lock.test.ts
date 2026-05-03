@@ -108,6 +108,8 @@ describe('SyncLock', () => {
       const lock = new SyncLock(webdav, '/remote', 'device-1', 300000);
       const result = await lock.acquire();
       expect(result).toBe(false);
+      // 不应该删除其他设备持有的锁文件
+      expect(webdav.deleteFile).not.toHaveBeenCalled();
     });
   });
 

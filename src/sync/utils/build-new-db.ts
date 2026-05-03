@@ -1,3 +1,4 @@
+import { sha256Hex } from '~/utils/sha256'
 import { SyncDB } from '../db/sync-db'
 import type { BaseTask, TaskResult } from '../tasks/task.interface'
 
@@ -6,11 +7,10 @@ import type { BaseTask, TaskResult } from '../tasks/task.interface'
  * This becomes the next lastSyncDB and gets uploaded as remoteDB.
  *
  * For each task:
- * - Successful Push/Pull: file exists locally, keep in DB
+ * - Successful Pull: re-read local file, compute hash, upsert into newDB
  * - Successful RemoveRemote: remote file deleted, remove from DB
  * - Successful RemoveLocal: local file deleted, remove from DB
- * - Successful Mkdir: directory exists, keep in DB
- * - Noop/Conflict: unchanged, keep in DB
+ * - Successful Push/Noop/Conflict/Mkdir: already in newDB (from localDB copy)
  */
 export async function buildNewDB(
   localDB: SyncDB,
@@ -31,9 +31,28 @@ export async function buildNewDB(
 
     if (taskName.includes('RemoveLocal') || taskName.includes('RemoveRemote')) {
       newDB.deleteFile(path)
+    } else if (taskName.includes('Pull')) {
+      // After a successful Pull, the local file has changed (downloaded from remote).
+      // The hash in newDB (copied from localDB, which was scanned BEFORE task
+      // execution) is stale. Re-read the file to get the correct hash.
+      try {
+        const content = await task.vault.adapter.readBinary(task.localPath)
+        const hash = await sha256Hex(content)
+        const stat = await task.vault.adapter.stat(task.localPath)
+        newDB.upsertFile({
+          path: task.localPath,
+          mtime: stat?.mtime ?? 0,
+          size: stat?.size ?? 0,
+          hash,
+          isDir: 0,
+        })
+      } catch {
+        // If we can't read the file after Pull (unlikely), keep the stale entry
+        // and let the next sync detect the discrepancy.
+      }
     }
-    // Push/Pull/Noop/Conflict/Mkdir — the file/dir is already in localDB,
-    // so it's already in newDB (we copied from localDB)
+    // Push/Noop/Conflict/Mkdir — the file/dir is already in localDB,
+    // so it's already in newDB (we copied from localDB). No update needed.
   }
 
   // Bump version

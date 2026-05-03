@@ -77,21 +77,9 @@ export class SyncLock {
           return true;
         }
         logger.debug('SyncLock: token 验证失败，锁被其他设备抢占');
-        // 尝试清理我们写入的锁文件
-        try {
-          await this.webdav.deleteFile(this.lockPath);
-        } catch {
-          // 清理失败，忽略
-        }
         return false;
       } catch {
         logger.debug('SyncLock: 回读验证失败');
-        // 尝试清理我们可能写入的锁文件
-        try {
-          await this.webdav.deleteFile(this.lockPath);
-        } catch {
-          // 清理失败，忽略
-        }
         return false;
       }
     }
