@@ -174,6 +174,9 @@ export class NutstoreSync {
 				lastSyncDB = await SyncDB.empty(deviceId)
 			}
 
+			const sessionId = crypto.randomUUID()
+			const startedAt = Date.now()
+
 			// Step 2: Acquire lock
 			const lock = new SyncLock(webdav, remoteBaseDir, deviceId)
 			const locked = await lock.acquire()
@@ -196,6 +199,15 @@ export class NutstoreSync {
 				} else {
 					remoteDB = await SyncDB.empty('remote')
 				}
+
+				// Write current device info
+				remoteDB.upsertDevice({
+					deviceId,
+					deviceName: '',
+					platform: this.platformLabel,
+					lastOnlineAt: Date.now(),
+					firstSeenAt: Date.now(),
+				})
 
 				// Step 4: Incremental local scan (uses lastSyncDB to skip unchanged files)
 				const localDB = await SyncDB.fromVault(
@@ -495,6 +507,34 @@ export class NutstoreSync {
 
 				// Step 8: Upload new DB
 				const newDB = await buildNewDB(localDB, remoteDB, confirmedTasks, allTasksResult)
+
+					// Record sync session
+					let pushCount = 0, pullCount = 0, removeCount = 0, conflictCount = 0
+					for (const task of confirmedTasks) {
+					const name = task.constructor.name
+					if (name.includes("Push")) pushCount++
+					else if (name.includes("Pull")) pullCount++
+					else if (name.includes("Remove")) removeCount++
+					else if (name.includes("Conflict")) conflictCount++
+					}
+
+					newDB.insertSyncSession({
+					sessionId,
+					deviceId,
+					startedAt,
+					endedAt: Date.now(),
+					totalTasks: confirmedTasks.length,
+					successCount: allTasksResult.filter((r) => r.success).length,
+					failCount: allTasksResult.filter((r) => !r.success).length,
+					pushCount,
+					pullCount,
+					removeCount,
+					conflictCount,
+					durationMs: Date.now() - startedAt,
+					status: allTasksResult.some((r) => !r.success) ? "completed_with_errors" : "completed",
+					errorMessage: "",
+					})
+
 				// 确保 _sync 目录存在，避免因中间目录缺失导致 DB 上传失败
 				try {
 					await webdav.createDirectory(
@@ -666,5 +706,12 @@ export class NutstoreSync {
 
 	get endpoint() {
 		return this.plugin.settings.webdavEndpoint
+	}
+
+	private get platformLabel(): string {
+		if (Platform.isIosApp) return 'ios'
+		if (Platform.isAndroidApp) return 'android'
+		if (Platform.isDesktopApp) return 'desktop'
+		return 'unknown'
 	}
 }
