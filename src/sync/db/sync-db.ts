@@ -44,6 +44,7 @@ export class SyncDB {
 	static async fromVault(
 		vault: Vault,
 		filterRules: FilterRules,
+		baseDB?: SyncDB,
 	): Promise<SyncDB> {
 		const sql = await getSql()
 		const db = new sql.Database()
@@ -95,10 +96,20 @@ export class SyncDB {
 			// Process files
 			for (const filePath of files) {
 				if (!isIncluded(filePath)) continue
-				const content = await vault.adapter.readBinary(filePath)
 				const stat = await vault.adapter.stat(filePath)
-				const hash = await sha256Hex(content)
-				insertStmt.run([filePath, stat?.mtime ?? 0, stat?.size ?? 0, hash, 0])
+				const mtime = stat?.mtime ?? 0
+				const size = stat?.size ?? 0
+
+				const baseFile = baseDB?.getFile(filePath)
+				let hash: string
+				if (baseFile && baseFile.mtime === mtime) {
+					hash = baseFile.hash
+				} else {
+					const content = await vault.adapter.readBinary(filePath)
+					hash = await sha256Hex(content)
+				}
+
+				insertStmt.run([filePath, mtime, size, hash, 0])
 			}
 		}
 
