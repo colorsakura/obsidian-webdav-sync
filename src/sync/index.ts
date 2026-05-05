@@ -165,10 +165,7 @@ export class NutstoreSync {
 			}
 
 			// Step 1: Load lastSyncDB (for deviceId and incremental scan)
-			let lastSyncDB = await loadLastSyncDB(
-				this.vault.getName(),
-				remoteBaseDir,
-			)
+			let lastSyncDB = await loadLastSyncDB(this.vault.getName(), remoteBaseDir)
 			let deviceId: string
 			if (lastSyncDB) {
 				deviceId = lastSyncDB.deviceId || crypto.randomUUID()
@@ -188,16 +185,31 @@ export class NutstoreSync {
 			try {
 				// Step 3: Download remote DB
 				const dbStorage = new DBStorage(webdav, remoteBaseDir)
-				let remoteDB = await dbStorage.download()
-				if (!remoteDB) {
+				const downloadedDB = await dbStorage.download()
+				let remoteDB: SyncDB
+				if (downloadedDB) {
+					remoteDB = downloadedDB
+				} else if (
+					downloadedDB === null &&
+					lastSyncDB &&
+					lastSyncDB.getAllFiles().length > 0
+				) {
+					// 远程 DB 不存在（404），用 lastSyncDB 回退，避免误删本地文件
+					logger.warn('远程 DB 不存在，使用 lastSyncDB 回退')
+					remoteDB = lastSyncDB
+				} else {
 					remoteDB = await SyncDB.empty('remote')
 				}
 
 				// Step 4: Incremental local scan (uses lastSyncDB to skip unchanged files)
-				const localDB = await SyncDB.fromVault(this.vault, {
-					exclude: filterRules.exclusionRules,
-					include: filterRules.inclusionRules,
-				}, lastSyncDB)
+				const localDB = await SyncDB.fromVault(
+					this.vault,
+					{
+						exclude: filterRules.exclusionRules,
+						include: filterRules.inclusionRules,
+					},
+					lastSyncDB,
+				)
 
 				// Step 5: Decision
 				const decider = new TwoWaySyncDecider(

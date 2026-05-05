@@ -12,7 +12,7 @@ export class DBStorage {
 		this.dbPath = `${remoteBaseDir.replace(/\/$/, '')}/_sync/db`
 	}
 
-	async download(): Promise<SyncDB | undefined> {
+	async download(): Promise<SyncDB | null | undefined> {
 		try {
 			const data = (await this.webdav.getFileContents(
 				this.dbPath,
@@ -23,7 +23,7 @@ export class DBStorage {
 			return await SyncDB.fromBuffer(data)
 		} catch (e: any) {
 			if (e.status === 404) {
-				return undefined
+				return null
 			}
 			logger.warn('DBStorage: 下载 DB 失败', e)
 			throw e

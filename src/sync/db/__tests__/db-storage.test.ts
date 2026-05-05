@@ -44,12 +44,12 @@ describe('DBStorage', () => {
 			expect(downloaded!.getAllFiles()).toEqual(sourceDB.getAllFiles())
 		})
 
-		it('DB 不存在时应该返回 undefined', async () => {
+		it('DB 不存在时应该返回 null', async () => {
 			const webdav = createMockWebdav()
 			const storage = new DBStorage(webdav, '/remote')
 
 			const result = await storage.download()
-			expect(result).toBeUndefined()
+			expect(result).toBeNull()
 		})
 	})
 

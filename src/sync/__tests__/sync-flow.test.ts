@@ -267,6 +267,70 @@ describe('Sync Flow Integration (DB-based)', () => {
 		expect(paths).toContain('new-folder/sub')
 	})
 
+	it('远程 DB 丢失：lastSyncDB 回退 → 未修改文件 Noop，修改文件 Push', async () => {
+		const localDB = await SyncDB.empty('device-1')
+		const lastSyncDB = await SyncDB.empty('device-1')
+
+		// 模拟之前同步过 10 个文件
+		for (let i = 0; i < 10; i++) {
+			const file = {
+				path: `file-${i}.md`,
+				mtime: 1000,
+				size: 100,
+				hash: makeHash(`v1-${i}`),
+				isDir: 0 as const,
+			}
+			lastSyncDB.upsertFile(file)
+		}
+
+		// 本地：0-6 未修改，7-8 已修改，9 已删除，新增 10
+		for (let i = 0; i < 7; i++) {
+			localDB.upsertFile({
+				path: `file-${i}.md`,
+				mtime: 1000,
+				size: 100,
+				hash: makeHash(`v1-${i}`),
+				isDir: 0,
+			})
+		}
+		for (let i = 7; i < 9; i++) {
+			localDB.upsertFile({
+				path: `file-${i}.md`,
+				mtime: 2000,
+				size: 150,
+				hash: makeHash(`v2-${i}`),
+				isDir: 0,
+			})
+		}
+		// file-9 不在 localDB 中（本地已删除）
+		localDB.upsertFile({
+			path: 'file-10.md',
+			mtime: 1000,
+			size: 100,
+			hash: makeHash('new-10'),
+			isDir: 0,
+		})
+
+		// 用 lastSyncDB 作为 remoteDB（模拟回退）
+		const tasks = await twoWayDecider(
+			await makeInput(localDB, lastSyncDB, lastSyncDB),
+		)
+
+		const pushTasks = tasks.filter((t) => t instanceof PushTask)
+		const removeRemoteTasks = tasks.filter((t) => t instanceof RemoveRemoteTask)
+		const removeLocalTasks = tasks.filter((t) => t instanceof RemoveLocalTask)
+		const noopTasks = tasks.filter((t) => t instanceof NoopTask)
+
+		// 2 个修改 + 1 个新增 = 3 push
+		expect(pushTasks).toHaveLength(3)
+		// file-9 本地已删除 → RemoveRemote
+		expect(removeRemoteTasks).toHaveLength(1)
+		// 不应该出现 RemoveLocal（关键断言：不会误删本地文件）
+		expect(removeLocalTasks).toHaveLength(0)
+		// 7 个未修改
+		expect(noopTasks).toHaveLength(7)
+	})
+
 	it('空同步：所有文件一致 → 全部 Noop', async () => {
 		const localDB = await SyncDB.empty('device-1')
 		const remoteDB = await SyncDB.empty('device-2')
