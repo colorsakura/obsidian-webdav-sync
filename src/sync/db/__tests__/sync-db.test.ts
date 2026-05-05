@@ -45,6 +45,115 @@ describe('SyncDB', () => {
 			const files = db.getAllFiles()
 			expect(files.map((f) => f.path)).not.toContain('ignored.txt')
 		})
+
+		it('mtime 相同时应复用 baseDB 的 hash，不调用 readBinary', async () => {
+			const baseDB = await SyncDB.empty('device-1')
+			baseDB.upsertFile({
+				path: 'note.md',
+				mtime: 1000,
+				size: 5,
+				hash: 'a'.repeat(64),
+				isDir: 0,
+			})
+
+			const mockVault = createMockVault({
+				'note.md': { content: 'hello', mtime: 1000 },
+			})
+
+			const db = await SyncDB.fromVault(mockVault, mockFilterRules, baseDB)
+
+			const file = db.getFile('note.md')!
+			expect(file.hash).toBe('a'.repeat(64))
+		})
+
+		it('mtime 不同时应重新计算 hash', async () => {
+			const baseDB = await SyncDB.empty('device-1')
+			baseDB.upsertFile({
+				path: 'note.md',
+				mtime: 1000,
+				size: 5,
+				hash: 'a'.repeat(64),
+				isDir: 0,
+			})
+
+			const mockVault = createMockVault({
+				'note.md': { content: 'hello world', mtime: 2000 },
+			})
+
+			const db = await SyncDB.fromVault(mockVault, mockFilterRules, baseDB)
+
+			const file = db.getFile('note.md')!
+			expect(file.hash).not.toBe('a'.repeat(64))
+			expect(file.hash).toHaveLength(64)
+			expect(file.mtime).toBe(2000)
+		})
+
+		it('新文件（baseDB 无记录）应正常计算 hash', async () => {
+			const baseDB = await SyncDB.empty('device-1')
+			baseDB.upsertFile({
+				path: 'old.md',
+				mtime: 1000,
+				size: 5,
+				hash: 'b'.repeat(64),
+				isDir: 0,
+			})
+
+			const mockVault = createMockVault({
+				'old.md': { content: 'old', mtime: 1000 },
+				'new.md': { content: 'new file here', mtime: 1100 },
+			})
+
+			const db = await SyncDB.fromVault(mockVault, mockFilterRules, baseDB)
+
+			expect(db.getFile('old.md')!.hash).toBe('b'.repeat(64))
+			const newFile = db.getFile('new.md')!
+			expect(newFile.hash).toHaveLength(64)
+			expect(newFile.hash).toMatch(/^[0-9a-f]{64}$/)
+		})
+
+		it('无 baseDB 时应全量计算（兼容旧行为）', async () => {
+			const mockVault = createMockVault({
+				'note.md': { content: 'hello', mtime: 1000 },
+			})
+
+			const db = await SyncDB.fromVault(mockVault, mockFilterRules)
+
+			const file = db.getFile('note.md')!
+			expect(file.hash).toHaveLength(64)
+			expect(file.hash).toMatch(/^[0-9a-f]{64}$/)
+		})
+
+		it('多个文件混合场景：部分复用、部分重新计算', async () => {
+			const baseDB = await SyncDB.empty('device-1')
+			baseDB.upsertFile({
+				path: 'unchanged.md',
+				mtime: 1000,
+				size: 7,
+				hash: 'a'.repeat(64),
+				isDir: 0,
+			})
+			baseDB.upsertFile({
+				path: 'changed.md',
+				mtime: 1000,
+				size: 4,
+				hash: 'b'.repeat(64),
+				isDir: 0,
+			})
+
+			const mockVault = createMockVault({
+				'unchanged.md': { content: 'nothing', mtime: 1000 },
+				'changed.md': { content: 'changed!', mtime: 2000 },
+				'new.md': { content: 'new file', mtime: 1100 },
+			})
+
+			const db = await SyncDB.fromVault(mockVault, mockFilterRules, baseDB)
+
+			expect(db.getFile('unchanged.md')!.hash).toBe('a'.repeat(64))
+			expect(db.getFile('changed.md')!.hash).not.toBe('b'.repeat(64))
+			expect(db.getFile('changed.md')!.hash).toHaveLength(64)
+			expect(db.getFile('new.md')!.hash).toHaveLength(64)
+			expect(db.getFile('new.md')!.hash).toMatch(/^[0-9a-f]{64}$/)
+		})
 	})
 
 	describe('fromBuffer / toBuffer', () => {
