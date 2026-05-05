@@ -1,3 +1,4 @@
+import { dirname } from 'path-browserify'
 import { encrypt } from '~/crypto'
 import logger from '~/utils/logger'
 import { BaseTask, toTaskError } from './task.interface'
@@ -17,13 +18,25 @@ export default class PushTask extends BaseTask {
 				content = await encrypt(content, this.options.encryptionKey)
 			}
 
-			const res = await this.webdav.putFileContents(this.remotePath, content, {
-				overwrite: true,
-			})
-			if (!res) {
-				throw new Error('Upload failed')
+			try {
+				await this.webdav.putFileContents(this.remotePath, content, {
+					overwrite: true,
+				})
+			} catch (e: any) {
+				// 坚果云在父目录不存在时返回 409 AncestorsNotFound
+				if (e.status === 409) {
+					await this.webdav.createDirectory(dirname(this.remotePath), {
+						recursive: true,
+					})
+					await this.webdav.putFileContents(this.remotePath, content, {
+						overwrite: true,
+					})
+				} else {
+					throw e
+				}
 			}
-			return { success: res }
+
+			return { success: true } as const
 		} catch (e) {
 			logger.error(this, e)
 			return { success: false, error: toTaskError(e, this) }
