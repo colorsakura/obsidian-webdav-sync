@@ -1,6 +1,6 @@
 {
   "name": "obsidian-webdav-sync",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "main": "main.js",
   "scripts": {
     "dev": "bun run dev:plugin & bun run dev:webdav-explorer & wait",
