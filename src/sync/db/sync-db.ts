@@ -70,7 +70,7 @@ export class SyncDB {
 		}
 
 		const insertStmt = db.prepare(
-			'INSERT OR REPLACE INTO files (path, mtime, size, hash, is_dir) VALUES (?, ?, ?, ?, ?)',
+			'INSERT OR REPLACE INTO files (path, mtime, size, hash, is_dir, first_seen_at, content_changed_at, last_synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
 		)
 
 		// BFS traversal to recursively discover all files and directories
@@ -105,20 +105,37 @@ export class SyncDB {
 
 				const baseFile = baseDB?.getFile(filePath)
 				let hash: string
-				if (baseFile && baseFile.mtime === mtime) {
-					hash = baseFile.hash
+				let firstSeenAt: number
+				let contentChangedAt: number
+
+				if (baseFile) {
+					firstSeenAt = baseFile.firstSeenAt
+					if (baseFile.mtime === mtime) {
+						hash = baseFile.hash
+						contentChangedAt = baseFile.contentChangedAt
+					} else {
+						const content = await vault.adapter.readBinary(filePath)
+						hash = await sha256Hex(content)
+						if (hash !== baseFile.hash) {
+							contentChangedAt = Date.now()
+						} else {
+							contentChangedAt = baseFile.contentChangedAt
+						}
+					}
 				} else {
+					firstSeenAt = Date.now()
+					contentChangedAt = Date.now()
 					const content = await vault.adapter.readBinary(filePath)
 					hash = await sha256Hex(content)
 				}
 
-				insertStmt.run([filePath, mtime, size, hash, 0])
+				insertStmt.run([filePath, mtime, size, hash, 0, firstSeenAt, contentChangedAt, 0])
 			}
 		}
 
 		// Insert all directories after collecting them
 		for (const folder of allFolders) {
-			insertStmt.run([folder, 0, 0, '', 1])
+			insertStmt.run([folder, 0, 0, '', 1, Date.now(), 0, 0])
 		}
 
 		insertStmt.free()
@@ -219,6 +236,91 @@ export class SyncDB {
 
 	deleteFile(path: string): void {
 		this.sqlDb.run('DELETE FROM files WHERE path = ?', [path])
+	}
+
+	upsertDevice(device: { deviceId: string; deviceName: string; platform: string; lastOnlineAt: number; firstSeenAt: number }): void {
+		const existing = this.getDevice(device.deviceId)
+		this.sqlDb.run(
+			'INSERT OR REPLACE INTO devices (device_id, device_name, platform, last_online_at, first_seen_at) VALUES (?, ?, ?, ?, ?)',
+			[
+				device.deviceId,
+				device.deviceName,
+				device.platform,
+				device.lastOnlineAt,
+				existing ? existing.firstSeenAt : device.firstSeenAt,
+			],
+		)
+	}
+
+	getDevice(deviceId: string): { deviceId: string; deviceName: string; platform: string; lastOnlineAt: number; firstSeenAt: number } | undefined {
+		const stmt = this.sqlDb.prepare('SELECT device_id, device_name, platform, last_online_at, first_seen_at FROM devices WHERE device_id = ?')
+		stmt.bind([deviceId])
+		if (stmt.step()) {
+			const cols = stmt.getColumnNames()
+			const vals = stmt.get()
+			stmt.free()
+			const v = (col: string) => vals[cols.indexOf(col)]
+			return {
+				deviceId: v('device_id') as string,
+				deviceName: v('device_name') as string,
+				platform: v('platform') as string,
+				lastOnlineAt: v('last_online_at') as number,
+				firstSeenAt: v('first_seen_at') as number,
+			}
+		}
+		stmt.free()
+		return undefined
+	}
+
+	getAllDevices(): { deviceId: string; deviceName: string; platform: string; lastOnlineAt: number; firstSeenAt: number }[] {
+		const results = this.sqlDb.exec('SELECT device_id, device_name, platform, last_online_at, first_seen_at FROM devices')
+		if (results.length === 0) return []
+		const { columns, values } = results[0]
+		return values.map((row) => ({
+			deviceId: row[columns.indexOf('device_id')] as string,
+			deviceName: row[columns.indexOf('device_name')] as string,
+			platform: row[columns.indexOf('platform')] as string,
+			lastOnlineAt: row[columns.indexOf('last_online_at')] as number,
+			firstSeenAt: row[columns.indexOf('first_seen_at')] as number,
+		}))
+	}
+
+	insertSyncSession(session: {
+		sessionId: string
+		deviceId: string
+		startedAt: number
+		endedAt: number
+		totalTasks: number
+		successCount: number
+		failCount: number
+		pushCount: number
+		pullCount: number
+		removeCount: number
+		conflictCount: number
+		durationMs: number
+		status: string
+		errorMessage: string
+	}): void {
+		this.sqlDb.run(
+			`INSERT INTO sync_sessions (session_id, device_id, started_at, ended_at, total_tasks, success_count, fail_count, push_count, pull_count, remove_count, conflict_count, duration_ms, status, error_message)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			[
+				session.sessionId,
+				session.deviceId,
+				session.startedAt,
+				session.endedAt,
+				session.totalTasks,
+				session.successCount,
+				session.failCount,
+				session.pushCount,
+				session.pullCount,
+				session.removeCount,
+				session.conflictCount,
+				session.durationMs,
+				session.status,
+				session.errorMessage,
+			],
+		)
 	}
 
 	getMeta(key: string): string | undefined {
