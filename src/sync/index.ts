@@ -494,7 +494,7 @@ export class NutstoreSync {
 				}
 
 				// Step 8: Upload new DB
-				const newDB = await buildNewDB(localDB, confirmedTasks, allTasksResult)
+				const newDB = await buildNewDB(localDB, remoteDB, confirmedTasks, allTasksResult)
 				// 确保 _sync 目录存在，避免因中间目录缺失导致 DB 上传失败
 				try {
 					await webdav.createDirectory(
