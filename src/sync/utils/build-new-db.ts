@@ -8,9 +8,10 @@ import type { BaseTask, TaskResult } from '../tasks/task.interface'
  *
  * For each task:
  * - Successful Pull: re-read local file, compute hash, upsert into newDB
+ * - Successful MkdirLocal: upsert directory into newDB (not in localDB pre-scan)
  * - Successful RemoveRemote: remote file deleted, remove from DB
  * - Successful RemoveLocal: local file deleted, remove from DB
- * - Successful Push/Noop/Conflict/Mkdir: already in newDB (from localDB copy)
+ * - Successful Push/Noop/Conflict/MkdirRemote: already in newDB (from localDB copy)
  */
 export async function buildNewDB(
 	localDB: SyncDB,
@@ -50,8 +51,19 @@ export async function buildNewDB(
 				// If we can't read the file after Pull (unlikely), keep the stale entry
 				// and let the next sync detect the discrepancy.
 			}
+		} else if (taskName.includes('MkdirLocal')) {
+			// After a successful MkdirLocal, the directory was created locally.
+			// It's not in localDB (which was scanned BEFORE task execution), so
+			// add it to newDB explicitly.
+			newDB.upsertFile({
+				path: task.localPath,
+				mtime: 0,
+				size: 0,
+				hash: '',
+				isDir: 1,
+			})
 		}
-		// Push/Noop/Conflict/Mkdir — the file/dir is already in localDB,
+		// Push/Noop/Conflict/MkdirRemote — the file/dir is already in localDB,
 		// so it's already in newDB (we copied from localDB). No update needed.
 	}
 

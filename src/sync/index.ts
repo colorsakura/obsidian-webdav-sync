@@ -187,15 +187,11 @@ export class NutstoreSync {
 				const dbStorage = new DBStorage(webdav, remoteBaseDir)
 				const downloadedDB = await dbStorage.download()
 				let remoteDB: SyncDB
-				if (downloadedDB) {
+				if (downloadedDB && downloadedDB.getAllFiles().length > 0) {
 					remoteDB = downloadedDB
-				} else if (
-					downloadedDB === null &&
-					lastSyncDB &&
-					lastSyncDB.getAllFiles().length > 0
-				) {
-					// 远程 DB 不存在（404），用 lastSyncDB 回退，避免误删本地文件
-					logger.warn('远程 DB 不存在，使用 lastSyncDB 回退')
+				} else if (lastSyncDB && lastSyncDB.getAllFiles().length > 0) {
+					// 远程 DB 不存在/为空，用 lastSyncDB 回退，避免误删本地文件
+					logger.warn('远程 DB 不可用，使用 lastSyncDB 回退')
 					remoteDB = lastSyncDB
 				} else {
 					remoteDB = await SyncDB.empty('remote')
@@ -499,6 +495,15 @@ export class NutstoreSync {
 
 				// Step 8: Upload new DB
 				const newDB = await buildNewDB(localDB, confirmedTasks, allTasksResult)
+				// 确保 _sync 目录存在，避免因中间目录缺失导致 DB 上传失败
+				try {
+					await webdav.createDirectory(
+						`${remoteBaseDir.replace(/\/$/, '')}/_sync`,
+						{ recursive: true },
+					)
+				} catch {
+					// _sync 目录可能已存在
+				}
 				await dbStorage.upload(newDB)
 
 				// Step 9: Save lastSyncDB
