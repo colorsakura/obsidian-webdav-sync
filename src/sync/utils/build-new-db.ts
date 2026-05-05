@@ -46,6 +46,9 @@ export async function buildNewDB(
 					size: stat?.size ?? 0,
 					hash,
 					isDir: 0,
+					firstSeenAt: 0,
+					contentChangedAt: 0,
+					lastSyncedAt: 0,
 				})
 			} catch {
 				// If we can't read the file after Pull (unlikely), keep the stale entry
@@ -61,6 +64,9 @@ export async function buildNewDB(
 				size: 0,
 				hash: '',
 				isDir: 1,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 		}
 		// Push/Noop/Conflict/MkdirRemote — the file/dir is already in localDB,

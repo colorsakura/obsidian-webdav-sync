@@ -35,7 +35,7 @@ describe('DBStorage', () => {
 				mtime: 1000,
 				size: 50,
 				hash: 'a'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 			await storage.upload(sourceDB)
 
@@ -64,7 +64,7 @@ describe('DBStorage', () => {
 				mtime: 1000,
 				size: 100,
 				hash: 'b'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 
 			await storage.upload(db)

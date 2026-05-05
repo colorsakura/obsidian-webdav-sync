@@ -129,8 +129,8 @@ export class SyncDB {
 		const sql = await getSql()
 		try {
 			const db = new sql.Database(new Uint8Array(buffer))
-			// Validate that the buffer contains a valid SQLite database
 			db.exec('SELECT count(*) FROM sqlite_master')
+			SyncDB.migrateIfNeeded(db)
 			return new SyncDB(db)
 		} catch (err) {
 			throw new Error(
@@ -212,8 +212,8 @@ export class SyncDB {
 
 	upsertFile(file: DBFile): void {
 		this.sqlDb.run(
-			'INSERT OR REPLACE INTO files (path, mtime, size, hash, is_dir) VALUES (?, ?, ?, ?, ?)',
-			[file.path, file.mtime, file.size, file.hash, file.isDir],
+			'INSERT OR REPLACE INTO files (path, mtime, size, hash, is_dir, first_seen_at, content_changed_at, last_synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+			[file.path, file.mtime, file.size, file.hash, file.isDir, file.firstSeenAt, file.contentChangedAt, file.lastSyncedAt],
 		)
 	}
 
@@ -255,7 +255,10 @@ export class SyncDB {
         mtime INTEGER NOT NULL,
         size INTEGER NOT NULL,
         hash TEXT NOT NULL,
-        is_dir INTEGER DEFAULT 0
+        is_dir INTEGER DEFAULT 0,
+        first_seen_at INTEGER DEFAULT 0,
+        content_changed_at INTEGER DEFAULT 0,
+        last_synced_at INTEGER DEFAULT 0
       )
     `)
 		db.run(`
@@ -264,6 +267,90 @@ export class SyncDB {
         value TEXT
       )
     `)
+		db.run(`
+      CREATE TABLE IF NOT EXISTS devices (
+        device_id TEXT PRIMARY KEY,
+        device_name TEXT NOT NULL DEFAULT '',
+        platform TEXT NOT NULL DEFAULT '',
+        last_online_at INTEGER DEFAULT 0,
+        first_seen_at INTEGER DEFAULT 0
+      )
+    `)
+		db.run(`
+      CREATE TABLE IF NOT EXISTS sync_sessions (
+        session_id TEXT PRIMARY KEY,
+        device_id TEXT NOT NULL,
+        started_at INTEGER NOT NULL,
+        ended_at INTEGER DEFAULT 0,
+        total_tasks INTEGER DEFAULT 0,
+        success_count INTEGER DEFAULT 0,
+        fail_count INTEGER DEFAULT 0,
+        push_count INTEGER DEFAULT 0,
+        pull_count INTEGER DEFAULT 0,
+        remove_count INTEGER DEFAULT 0,
+        conflict_count INTEGER DEFAULT 0,
+        duration_ms INTEGER DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'completed',
+        error_message TEXT DEFAULT ''
+      )
+    `)
+	}
+
+	private static migrateIfNeeded(db: SqlJsDatabase): void {
+		// Check if files table has new columns
+		const cols = db.exec('PRAGMA table_info(files)')
+		if (cols.length > 0) {
+			const columnNames = cols[0].values.map((r) => r[1] as string)
+			if (!columnNames.includes('first_seen_at')) {
+				db.run('ALTER TABLE files ADD COLUMN first_seen_at INTEGER DEFAULT 0')
+			}
+			if (!columnNames.includes('content_changed_at')) {
+				db.run('ALTER TABLE files ADD COLUMN content_changed_at INTEGER DEFAULT 0')
+			}
+			if (!columnNames.includes('last_synced_at')) {
+				db.run('ALTER TABLE files ADD COLUMN last_synced_at INTEGER DEFAULT 0')
+			}
+		}
+
+		// Check and create devices table
+		const deviceTable = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='devices'")
+		if (deviceTable.length === 0 || deviceTable[0].values.length === 0) {
+			db.run(`
+				CREATE TABLE IF NOT EXISTS devices (
+					device_id TEXT PRIMARY KEY,
+					device_name TEXT NOT NULL DEFAULT '',
+					platform TEXT NOT NULL DEFAULT '',
+					last_online_at INTEGER DEFAULT 0,
+					first_seen_at INTEGER DEFAULT 0
+				)
+			`)
+		}
+
+		// Check and create sync_sessions table
+		const sessionsTable = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='sync_sessions'")
+		if (sessionsTable.length === 0 || sessionsTable[0].values.length === 0) {
+			db.run(`
+				CREATE TABLE IF NOT EXISTS sync_sessions (
+					session_id TEXT PRIMARY KEY,
+					device_id TEXT NOT NULL,
+					started_at INTEGER NOT NULL,
+					ended_at INTEGER DEFAULT 0,
+					total_tasks INTEGER DEFAULT 0,
+					success_count INTEGER DEFAULT 0,
+					fail_count INTEGER DEFAULT 0,
+					push_count INTEGER DEFAULT 0,
+					pull_count INTEGER DEFAULT 0,
+					remove_count INTEGER DEFAULT 0,
+					conflict_count INTEGER DEFAULT 0,
+					duration_ms INTEGER DEFAULT 0,
+					status TEXT NOT NULL DEFAULT 'completed',
+					error_message TEXT DEFAULT ''
+				)
+			`)
+		}
+
+		// Update version marker
+		db.run("INSERT OR REPLACE INTO meta (key, value) VALUES ('version', '2')")
 	}
 
 	private static setMeta(db: SqlJsDatabase, key: string, value: string): void {

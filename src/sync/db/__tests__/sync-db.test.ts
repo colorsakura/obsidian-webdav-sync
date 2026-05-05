@@ -53,7 +53,7 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 999,
 				hash: 'a'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 
 			const mockVault = createMockVault({
@@ -74,7 +74,7 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 5,
 				hash: 'a'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 
 			const mockVault = createMockVault({
@@ -96,7 +96,7 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 5,
 				hash: 'b'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 
 			const mockVault = createMockVault({
@@ -131,14 +131,14 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 7,
 				hash: 'a'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 			baseDB.upsertFile({
 				path: 'changed.md',
 				mtime: 1000,
 				size: 4,
 				hash: 'b'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 
 			const mockVault = createMockVault({
@@ -165,7 +165,7 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 100,
 				hash: 'a'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 
 			const buffer = db.toBuffer()
@@ -202,7 +202,7 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 50,
 				hash: 'b'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 
 			expect(db.getFile('a/b.md')).toBeDefined()
@@ -219,7 +219,7 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 100,
 				hash: 'a'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 			expect(db.getFile('test.md')).toBeDefined()
 
@@ -237,7 +237,7 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 100,
 				hash: 'a'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 
 			// 更新同一路径的文件
@@ -246,7 +246,7 @@ describe('SyncDB', () => {
 				mtime: 2000,
 				size: 200,
 				hash: 'b'.repeat(64),
-				isDir: 0,
+				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 			})
 
 			const file = db.getFile('test.md')!
