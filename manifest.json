@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-webdav-sync",
 	"name": "WebDAV Sync",
-	"version": "2.0.3",
+	"version": "2.0.4",
 	"minAppVersion": "1.12.0",
 	"description": "Sync your vault with any WebDAV server.",
 	"author": "obsidian-webdav-sync",
