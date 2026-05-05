@@ -276,9 +276,7 @@ export class SyncDB {
 		)
 	}
 
-	getDevice(
-		deviceId: string,
-	):
+	getDevice(deviceId: string):
 		| {
 				deviceId: string
 				deviceName: string

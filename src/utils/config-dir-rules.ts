@@ -3,14 +3,14 @@ import type { GlobMatchOptions } from './glob-match'
 
 export type ConfigDirSyncMode = 'none' | 'bookmarks' | 'all'
 
-export interface EffectiveFilterRules {
+interface EffectiveFilterRules {
 	exclusionRules: GlobMatchOptions[]
 	inclusionRules: GlobMatchOptions[]
 	configDir: string
 	configDirSyncMode: ConfigDirSyncMode
 }
 
-export interface ConfigDirFilterRuleInput {
+interface ConfigDirFilterRuleInput {
 	exclusionRules: GlobMatchOptions[]
 	inclusionRules: GlobMatchOptions[]
 }
