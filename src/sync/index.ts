@@ -483,12 +483,7 @@ export class NutstoreSync {
 				}
 
 				// Step 8: Upload new DB
-				const newDB = await buildNewDB(
-					localDB,
-					confirmedTasks,
-					allTasksResult,
-					remoteDB,
-				)
+				const newDB = await buildNewDB(localDB, confirmedTasks, allTasksResult)
 				await dbStorage.upload(newDB)
 
 				// Step 9: Save lastSyncDB
