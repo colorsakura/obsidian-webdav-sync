@@ -73,7 +73,10 @@ export async function buildNewDB(
 			} catch {
 				// If we can't read the file after Pull, keep the stale entry
 			}
-		} else if (taskName.includes('Push') || taskName.includes('ConflictResolve')) {
+		} else if (
+			taskName.includes('Push') ||
+			taskName.includes('ConflictResolve')
+		) {
 			const existing = newDB.getFile(path)
 			if (existing) {
 				newDB.upsertFile({

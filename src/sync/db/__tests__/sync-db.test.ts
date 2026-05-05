@@ -48,14 +48,18 @@ describe('SyncDB', () => {
 
 		it('mtime 相同时应复用 baseDB 的 hash', async () => {
 			// SHA-256 of 'hello'
-				const realHash = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
-				const baseDB = await SyncDB.empty('device-1')
+			const realHash =
+				'2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
+			const baseDB = await SyncDB.empty('device-1')
 			baseDB.upsertFile({
 				path: 'note.md',
 				mtime: 1000,
 				size: 999,
 				hash: 'a'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 
 			const mockVault = createMockVault({
@@ -71,14 +75,18 @@ describe('SyncDB', () => {
 
 		it('mtime 不同时应重新计算 hash', async () => {
 			// SHA-256 of 'hello'
-				const realHash = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
-				const baseDB = await SyncDB.empty('device-1')
+			const realHash =
+				'2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
+			const baseDB = await SyncDB.empty('device-1')
 			baseDB.upsertFile({
 				path: 'note.md',
 				mtime: 1000,
 				size: 5,
 				hash: 'a'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 
 			const mockVault = createMockVault({
@@ -95,14 +103,18 @@ describe('SyncDB', () => {
 
 		it('新文件（baseDB 无记录）应正常计算 hash', async () => {
 			// SHA-256 of 'hello'
-				const realHash = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
-				const baseDB = await SyncDB.empty('device-1')
+			const realHash =
+				'2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
+			const baseDB = await SyncDB.empty('device-1')
 			baseDB.upsertFile({
 				path: 'old.md',
 				mtime: 1000,
 				size: 5,
 				hash: 'b'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 
 			const mockVault = createMockVault({
@@ -132,21 +144,28 @@ describe('SyncDB', () => {
 
 		it('多个文件混合场景：部分复用、部分重新计算', async () => {
 			// SHA-256 of 'hello'
-				const realHash = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
-				const baseDB = await SyncDB.empty('device-1')
+			const realHash =
+				'2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
+			const baseDB = await SyncDB.empty('device-1')
 			baseDB.upsertFile({
 				path: 'unchanged.md',
 				mtime: 1000,
 				size: 7,
 				hash: 'a'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 			baseDB.upsertFile({
 				path: 'changed.md',
 				mtime: 1000,
 				size: 4,
 				hash: 'b'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 
 			const mockVault = createMockVault({
@@ -173,7 +192,10 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 100,
 				hash: 'a'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 
 			const buffer = db.toBuffer()
@@ -210,7 +232,10 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 50,
 				hash: 'b'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 
 			expect(db.getFile('a/b.md')).toBeDefined()
@@ -227,7 +252,10 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 100,
 				hash: 'a'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 			expect(db.getFile('test.md')).toBeDefined()
 
@@ -245,7 +273,10 @@ describe('SyncDB', () => {
 				mtime: 1000,
 				size: 100,
 				hash: 'a'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 
 			// 更新同一路径的文件
@@ -254,7 +285,10 @@ describe('SyncDB', () => {
 				mtime: 2000,
 				size: 200,
 				hash: 'b'.repeat(64),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 
 			const file = db.getFile('test.md')!
@@ -264,150 +298,178 @@ describe('SyncDB', () => {
 		})
 	})
 
-
-		describe('time fields', () => {
-			it('新文件应有 firstSeenAt 和 contentChangedAt', async () => {
-				const mockVault = createMockVault({
-					'new.md': { content: 'fresh', mtime: 1000 },
-				})
-
-				const db = await SyncDB.fromVault(mockVault, mockFilterRules)
-
-				const file = db.getFile('new.md')!
-				expect(file.firstSeenAt).toBeGreaterThan(0)
-				expect(file.contentChangedAt).toBeGreaterThan(0)
-				expect(file.lastSyncedAt).toBe(0)
+	describe('time fields', () => {
+		it('新文件应有 firstSeenAt 和 contentChangedAt', async () => {
+			const mockVault = createMockVault({
+				'new.md': { content: 'fresh', mtime: 1000 },
 			})
 
-			it('mtime 不变时复用 baseDB 的时间字段', async () => {
-				// SHA-256 of 'hello'
-				const realHash = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
-				const baseDB = await SyncDB.empty('device-1')
-				baseDB.upsertFile({
-					path: 'old.md',
-					mtime: 1000,
-					size: 5,
-					hash: 'a'.repeat(64),
-					isDir: 0,
-					firstSeenAt: 900,
-					contentChangedAt: 950,
-					lastSyncedAt: 0,
-				})
+			const db = await SyncDB.fromVault(mockVault, mockFilterRules)
 
-				const mockVault = createMockVault({
-					'old.md': { content: 'hello', mtime: 1000 },
-				})
-
-				const db = await SyncDB.fromVault(mockVault, mockFilterRules, baseDB)
-
-				const file = db.getFile('old.md')!
-				expect(file.hash).toBe('a'.repeat(64))
-				expect(file.firstSeenAt).toBe(900)
-				expect(file.contentChangedAt).toBe(950)
-			})
-
-			it('mtime 变但 hash 不变时不应更新 contentChangedAt', async () => {
-				// SHA-256 of 'hello'
-				const realHash = '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
-				const baseDB = await SyncDB.empty('device-1')
-				baseDB.upsertFile({
-					path: 'touch.md',
-					mtime: 1000,
-					size: 5,
-					hash: realHash,
-					isDir: 0,
-					firstSeenAt: 800,
-					contentChangedAt: 900,
-					lastSyncedAt: 0,
-				})
-
-				const mockVault = createMockVault({
-					'touch.md': { content: 'hello', mtime: 2000 },
-				})
-
-				const db = await SyncDB.fromVault(mockVault, mockFilterRules, baseDB)
-
-				const file = db.getFile('touch.md')!
-				expect(file.mtime).toBe(2000)
-				expect(file.hash).toBe(realHash)
-				expect(file.contentChangedAt).toBe(900)
-			})
+			const file = db.getFile('new.md')!
+			expect(file.firstSeenAt).toBeGreaterThan(0)
+			expect(file.contentChangedAt).toBeGreaterThan(0)
+			expect(file.lastSyncedAt).toBe(0)
 		})
 
-		describe('devices', () => {
-			it('应能 upsert 和查询设备', async () => {
-				const db = await SyncDB.empty('device-1')
-
-				db.upsertDevice({
-					deviceId: 'dev-a',
-					deviceName: 'My Desktop',
-					platform: 'desktop',
-					lastOnlineAt: 1000,
-					firstSeenAt: 900,
-				})
-
-				const device = db.getDevice('dev-a')!
-				expect(device.deviceId).toBe('dev-a')
-				expect(device.deviceName).toBe('My Desktop')
-				expect(device.platform).toBe('desktop')
+		it('mtime 不变时复用 baseDB 的时间字段', async () => {
+			// SHA-256 of 'hello'
+			const realHash =
+				'2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
+			const baseDB = await SyncDB.empty('device-1')
+			baseDB.upsertFile({
+				path: 'old.md',
+				mtime: 1000,
+				size: 5,
+				hash: 'a'.repeat(64),
+				isDir: 0,
+				firstSeenAt: 900,
+				contentChangedAt: 950,
+				lastSyncedAt: 0,
 			})
 
-			it('upsert 已有设备应保留 firstSeenAt', async () => {
-				const db = await SyncDB.empty('device-1')
-
-				db.upsertDevice({
-					deviceId: 'dev-a',
-					deviceName: 'Desktop',
-					platform: 'desktop',
-					lastOnlineAt: 1000,
-					firstSeenAt: 900,
-				})
-
-				db.upsertDevice({
-					deviceId: 'dev-a',
-					deviceName: 'Desktop Updated',
-					platform: 'desktop',
-					lastOnlineAt: 2000,
-					firstSeenAt: 9999,
-				})
-
-				const device = db.getDevice('dev-a')!
-				expect(device.firstSeenAt).toBe(900)
-				expect(device.lastOnlineAt).toBe(2000)
-				expect(device.deviceName).toBe('Desktop Updated')
+			const mockVault = createMockVault({
+				'old.md': { content: 'hello', mtime: 1000 },
 			})
 
-			it('getAllDevices 应返回所有设备', async () => {
-				const db = await SyncDB.empty('device-1')
-				db.upsertDevice({ deviceId: 'a', deviceName: '', platform: '', lastOnlineAt: 0, firstSeenAt: 0 })
-				db.upsertDevice({ deviceId: 'b', deviceName: '', platform: '', lastOnlineAt: 0, firstSeenAt: 0 })
+			const db = await SyncDB.fromVault(mockVault, mockFilterRules, baseDB)
 
-				expect(db.getAllDevices()).toHaveLength(2)
-			})
+			const file = db.getFile('old.md')!
+			expect(file.hash).toBe('a'.repeat(64))
+			expect(file.firstSeenAt).toBe(900)
+			expect(file.contentChangedAt).toBe(950)
 		})
 
-		describe('migration', () => {
-			it('fromBuffer 应自动为老 DB 添加新字段和新表', async () => {
-				const db = await SyncDB.empty('dev-1')
-				db.upsertFile({ path: 'f.md', mtime: 1, size: 1, hash: 'a'.repeat(64), isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0 })
-				db.upsertDevice({ deviceId: 'dev-1', deviceName: '', platform: '', lastOnlineAt: 0, firstSeenAt: 0 })
-
-				const buffer = db.toBuffer()
-				const loaded = await SyncDB.fromBuffer(buffer)
-
-				const file = loaded.getFile('f.md')!
-				expect(file.firstSeenAt).toBeDefined()
-				expect(loaded.getDevice('dev-1')).toBeDefined()
+		it('mtime 变但 hash 不变时不应更新 contentChangedAt', async () => {
+			// SHA-256 of 'hello'
+			const realHash =
+				'2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
+			const baseDB = await SyncDB.empty('device-1')
+			baseDB.upsertFile({
+				path: 'touch.md',
+				mtime: 1000,
+				size: 5,
+				hash: realHash,
+				isDir: 0,
+				firstSeenAt: 800,
+				contentChangedAt: 900,
+				lastSyncedAt: 0,
 			})
 
-			it('db.version 在 fromBuffer 迁移后应为 2', async () => {
-				const oldDB = await SyncDB.empty('dev-1')
-				const buffer = oldDB.toBuffer()
-
-				const loaded = await SyncDB.fromBuffer(buffer)
-				expect(loaded.version).toBe(2)
+			const mockVault = createMockVault({
+				'touch.md': { content: 'hello', mtime: 2000 },
 			})
+
+			const db = await SyncDB.fromVault(mockVault, mockFilterRules, baseDB)
+
+			const file = db.getFile('touch.md')!
+			expect(file.mtime).toBe(2000)
+			expect(file.hash).toBe(realHash)
+			expect(file.contentChangedAt).toBe(900)
 		})
+	})
+
+	describe('devices', () => {
+		it('应能 upsert 和查询设备', async () => {
+			const db = await SyncDB.empty('device-1')
+
+			db.upsertDevice({
+				deviceId: 'dev-a',
+				deviceName: 'My Desktop',
+				platform: 'desktop',
+				lastOnlineAt: 1000,
+				firstSeenAt: 900,
+			})
+
+			const device = db.getDevice('dev-a')!
+			expect(device.deviceId).toBe('dev-a')
+			expect(device.deviceName).toBe('My Desktop')
+			expect(device.platform).toBe('desktop')
+		})
+
+		it('upsert 已有设备应保留 firstSeenAt', async () => {
+			const db = await SyncDB.empty('device-1')
+
+			db.upsertDevice({
+				deviceId: 'dev-a',
+				deviceName: 'Desktop',
+				platform: 'desktop',
+				lastOnlineAt: 1000,
+				firstSeenAt: 900,
+			})
+
+			db.upsertDevice({
+				deviceId: 'dev-a',
+				deviceName: 'Desktop Updated',
+				platform: 'desktop',
+				lastOnlineAt: 2000,
+				firstSeenAt: 9999,
+			})
+
+			const device = db.getDevice('dev-a')!
+			expect(device.firstSeenAt).toBe(900)
+			expect(device.lastOnlineAt).toBe(2000)
+			expect(device.deviceName).toBe('Desktop Updated')
+		})
+
+		it('getAllDevices 应返回所有设备', async () => {
+			const db = await SyncDB.empty('device-1')
+			db.upsertDevice({
+				deviceId: 'a',
+				deviceName: '',
+				platform: '',
+				lastOnlineAt: 0,
+				firstSeenAt: 0,
+			})
+			db.upsertDevice({
+				deviceId: 'b',
+				deviceName: '',
+				platform: '',
+				lastOnlineAt: 0,
+				firstSeenAt: 0,
+			})
+
+			expect(db.getAllDevices()).toHaveLength(2)
+		})
+	})
+
+	describe('migration', () => {
+		it('fromBuffer 应自动为老 DB 添加新字段和新表', async () => {
+			const db = await SyncDB.empty('dev-1')
+			db.upsertFile({
+				path: 'f.md',
+				mtime: 1,
+				size: 1,
+				hash: 'a'.repeat(64),
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
+			})
+			db.upsertDevice({
+				deviceId: 'dev-1',
+				deviceName: '',
+				platform: '',
+				lastOnlineAt: 0,
+				firstSeenAt: 0,
+			})
+
+			const buffer = db.toBuffer()
+			const loaded = await SyncDB.fromBuffer(buffer)
+
+			const file = loaded.getFile('f.md')!
+			expect(file.firstSeenAt).toBeDefined()
+			expect(loaded.getDevice('dev-1')).toBeDefined()
+		})
+
+		it('db.version 在 fromBuffer 迁移后应为 2', async () => {
+			const oldDB = await SyncDB.empty('dev-1')
+			const buffer = oldDB.toBuffer()
+
+			const loaded = await SyncDB.fromBuffer(buffer)
+			expect(loaded.version).toBe(2)
+		})
+	})
 })
 
 // helper: 构造模拟 Obsidian Vault，adapter.list 仅返回指定路径的直接子节点

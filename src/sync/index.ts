@@ -506,19 +506,27 @@ export class NutstoreSync {
 				}
 
 				// Step 8: Upload new DB
-				const newDB = await buildNewDB(localDB, remoteDB, confirmedTasks, allTasksResult)
+				const newDB = await buildNewDB(
+					localDB,
+					remoteDB,
+					confirmedTasks,
+					allTasksResult,
+				)
 
-					// Record sync session
-					let pushCount = 0, pullCount = 0, removeCount = 0, conflictCount = 0
-					for (const task of confirmedTasks) {
+				// Record sync session
+				let pushCount = 0,
+					pullCount = 0,
+					removeCount = 0,
+					conflictCount = 0
+				for (const task of confirmedTasks) {
 					const name = task.constructor.name
-					if (name.includes("Push")) pushCount++
-					else if (name.includes("Pull")) pullCount++
-					else if (name.includes("Remove")) removeCount++
-					else if (name.includes("Conflict")) conflictCount++
-					}
+					if (name.includes('Push')) pushCount++
+					else if (name.includes('Pull')) pullCount++
+					else if (name.includes('Remove')) removeCount++
+					else if (name.includes('Conflict')) conflictCount++
+				}
 
-					newDB.insertSyncSession({
+				newDB.insertSyncSession({
 					sessionId,
 					deviceId,
 					startedAt,
@@ -531,9 +539,11 @@ export class NutstoreSync {
 					removeCount,
 					conflictCount,
 					durationMs: Date.now() - startedAt,
-					status: allTasksResult.some((r) => !r.success) ? "completed_with_errors" : "completed",
-					errorMessage: "",
-					})
+					status: allTasksResult.some((r) => !r.success)
+						? 'completed_with_errors'
+						: 'completed',
+					errorMessage: '',
+				})
 
 				// 确保 _sync 目录存在，避免因中间目录缺失导致 DB 上传失败
 				try {

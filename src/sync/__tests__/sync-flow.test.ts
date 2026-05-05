@@ -99,7 +99,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 				mtime: 1000 + i,
 				size: 100,
 				hash: makeHash(`local-${i}`),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 		}
 		const remoteDB = await SyncDB.empty('remote')
@@ -124,8 +127,26 @@ describe('Sync Flow Integration (DB-based)', () => {
 		for (let i = 0; i < 10; i++) {
 			const path = `doc-${i}.md`
 			const hash = makeHash(`v1-${i}`)
-			lastSyncDB.upsertFile({ path, mtime: 1000, size: 100, hash, isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0 })
-			remoteDB.upsertFile({ path, mtime: 1000, size: 100, hash, isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0 })
+			lastSyncDB.upsertFile({
+				path,
+				mtime: 1000,
+				size: 100,
+				hash,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
+			})
+			remoteDB.upsertFile({
+				path,
+				mtime: 1000,
+				size: 100,
+				hash,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
+			})
 		}
 
 		// Local: modify 5 files (0-4), keep 3 unchanged (7-9), delete 2 (5-6 absent)
@@ -135,7 +156,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 				mtime: 2000,
 				size: 150,
 				hash: makeHash(`v2-${i}`),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 		}
 		for (let i = 7; i < 10; i++) {
@@ -144,7 +168,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 				mtime: 1000,
 				size: 100,
 				hash: makeHash(`v1-${i}`),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 		}
 		// New files (10-12)
@@ -154,7 +181,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 				mtime: 1000,
 				size: 100,
 				hash: makeHash(`new-${i}`),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 		}
 
@@ -185,21 +215,30 @@ describe('Sync Flow Integration (DB-based)', () => {
 			mtime: 1000,
 			size: 100,
 			hash: makeHash('base'),
-			isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+			isDir: 0,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
 		})
 		localDB.upsertFile({
 			path,
 			mtime: 2000,
 			size: 120,
 			hash: makeHash('local-edit'),
-			isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+			isDir: 0,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
 		})
 		remoteDB.upsertFile({
 			path,
 			mtime: 3000,
 			size: 130,
 			hash: makeHash('remote-edit'),
-			isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+			isDir: 0,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
 		})
 
 		const tasks = await twoWayDecider(
@@ -221,7 +260,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 			mtime: 1000,
 			size: 100,
 			hash: makeHash('old'),
-			isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+			isDir: 0,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
 		})
 
 		const tasks = await twoWayDecider(
@@ -246,14 +288,20 @@ describe('Sync Flow Integration (DB-based)', () => {
 			mtime: 0,
 			size: 0,
 			hash: '',
-			isDir: 1, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
 		})
 		localDB.upsertFile({
 			path: 'new-folder/sub',
 			mtime: 0,
 			size: 0,
 			hash: '',
-			isDir: 1, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
 		})
 
 		const tasks = await twoWayDecider(
@@ -278,7 +326,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 				mtime: 1000,
 				size: 100,
 				hash: makeHash(`v1-${i}`),
-				isDir: 0 as const, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0 as const,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			}
 			lastSyncDB.upsertFile(file)
 		}
@@ -290,7 +341,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 				mtime: 1000,
 				size: 100,
 				hash: makeHash(`v1-${i}`),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 		}
 		for (let i = 7; i < 9; i++) {
@@ -299,7 +353,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 				mtime: 2000,
 				size: 150,
 				hash: makeHash(`v2-${i}`),
-				isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			})
 		}
 		// file-9 不在 localDB 中（本地已删除）
@@ -308,7 +365,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 			mtime: 1000,
 			size: 100,
 			hash: makeHash('new-10'),
-			isDir: 0, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+			isDir: 0,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
 		})
 
 		// 用 lastSyncDB 作为 remoteDB（模拟回退）
@@ -342,7 +402,10 @@ describe('Sync Flow Integration (DB-based)', () => {
 				mtime: 1000,
 				size: 100,
 				hash: makeHash(`h-${i}`),
-				isDir: 0 as const, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
+				isDir: 0 as const,
+				firstSeenAt: 0,
+				contentChangedAt: 0,
+				lastSyncedAt: 0,
 			}
 			localDB.upsertFile(file)
 			remoteDB.upsertFile(file)

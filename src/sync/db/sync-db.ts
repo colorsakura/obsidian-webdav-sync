@@ -129,7 +129,16 @@ export class SyncDB {
 					hash = await sha256Hex(content)
 				}
 
-				insertStmt.run([filePath, mtime, size, hash, 0, firstSeenAt, contentChangedAt, 0])
+				insertStmt.run([
+					filePath,
+					mtime,
+					size,
+					hash,
+					0,
+					firstSeenAt,
+					contentChangedAt,
+					0,
+				])
 			}
 		}
 
@@ -230,7 +239,16 @@ export class SyncDB {
 	upsertFile(file: DBFile): void {
 		this.sqlDb.run(
 			'INSERT OR REPLACE INTO files (path, mtime, size, hash, is_dir, first_seen_at, content_changed_at, last_synced_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-			[file.path, file.mtime, file.size, file.hash, file.isDir, file.firstSeenAt, file.contentChangedAt, file.lastSyncedAt],
+			[
+				file.path,
+				file.mtime,
+				file.size,
+				file.hash,
+				file.isDir,
+				file.firstSeenAt,
+				file.contentChangedAt,
+				file.lastSyncedAt,
+			],
 		)
 	}
 
@@ -238,7 +256,13 @@ export class SyncDB {
 		this.sqlDb.run('DELETE FROM files WHERE path = ?', [path])
 	}
 
-	upsertDevice(device: { deviceId: string; deviceName: string; platform: string; lastOnlineAt: number; firstSeenAt: number }): void {
+	upsertDevice(device: {
+		deviceId: string
+		deviceName: string
+		platform: string
+		lastOnlineAt: number
+		firstSeenAt: number
+	}): void {
 		const existing = this.getDevice(device.deviceId)
 		this.sqlDb.run(
 			'INSERT OR REPLACE INTO devices (device_id, device_name, platform, last_online_at, first_seen_at) VALUES (?, ?, ?, ?, ?)',
@@ -252,8 +276,20 @@ export class SyncDB {
 		)
 	}
 
-	getDevice(deviceId: string): { deviceId: string; deviceName: string; platform: string; lastOnlineAt: number; firstSeenAt: number } | undefined {
-		const stmt = this.sqlDb.prepare('SELECT device_id, device_name, platform, last_online_at, first_seen_at FROM devices WHERE device_id = ?')
+	getDevice(
+		deviceId: string,
+	):
+		| {
+				deviceId: string
+				deviceName: string
+				platform: string
+				lastOnlineAt: number
+				firstSeenAt: number
+		  }
+		| undefined {
+		const stmt = this.sqlDb.prepare(
+			'SELECT device_id, device_name, platform, last_online_at, first_seen_at FROM devices WHERE device_id = ?',
+		)
 		stmt.bind([deviceId])
 		if (stmt.step()) {
 			const cols = stmt.getColumnNames()
@@ -272,8 +308,16 @@ export class SyncDB {
 		return undefined
 	}
 
-	getAllDevices(): { deviceId: string; deviceName: string; platform: string; lastOnlineAt: number; firstSeenAt: number }[] {
-		const results = this.sqlDb.exec('SELECT device_id, device_name, platform, last_online_at, first_seen_at FROM devices')
+	getAllDevices(): {
+		deviceId: string
+		deviceName: string
+		platform: string
+		lastOnlineAt: number
+		firstSeenAt: number
+	}[] {
+		const results = this.sqlDb.exec(
+			'SELECT device_id, device_name, platform, last_online_at, first_seen_at FROM devices',
+		)
 		if (results.length === 0) return []
 		const { columns, values } = results[0]
 		return values.map((row) => ({
@@ -407,7 +451,9 @@ export class SyncDB {
 				db.run('ALTER TABLE files ADD COLUMN first_seen_at INTEGER DEFAULT 0')
 			}
 			if (!columnNames.includes('content_changed_at')) {
-				db.run('ALTER TABLE files ADD COLUMN content_changed_at INTEGER DEFAULT 0')
+				db.run(
+					'ALTER TABLE files ADD COLUMN content_changed_at INTEGER DEFAULT 0',
+				)
 			}
 			if (!columnNames.includes('last_synced_at')) {
 				db.run('ALTER TABLE files ADD COLUMN last_synced_at INTEGER DEFAULT 0')
@@ -415,7 +461,9 @@ export class SyncDB {
 		}
 
 		// Check and create devices table
-		const deviceTable = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='devices'")
+		const deviceTable = db.exec(
+			"SELECT name FROM sqlite_master WHERE type='table' AND name='devices'",
+		)
 		if (deviceTable.length === 0 || deviceTable[0].values.length === 0) {
 			db.run(`
 				CREATE TABLE IF NOT EXISTS devices (
@@ -429,7 +477,9 @@ export class SyncDB {
 		}
 
 		// Check and create sync_sessions table
-		const sessionsTable = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='sync_sessions'")
+		const sessionsTable = db.exec(
+			"SELECT name FROM sqlite_master WHERE type='table' AND name='sync_sessions'",
+		)
 		if (sessionsTable.length === 0 || sessionsTable[0].values.length === 0) {
 			db.run(`
 				CREATE TABLE IF NOT EXISTS sync_sessions (
