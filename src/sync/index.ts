@@ -164,12 +164,18 @@ export class NutstoreSync {
 				}
 			}
 
-			// Step 1: Local scan
-			const localDB = await SyncDB.fromVault(this.vault, {
-				exclude: filterRules.exclusionRules,
-				include: filterRules.inclusionRules,
-			})
-			const deviceId = localDB.deviceId
+			// Step 1: Load lastSyncDB (for deviceId and incremental scan)
+			let lastSyncDB = await loadLastSyncDB(
+				this.vault.getName(),
+				remoteBaseDir,
+			)
+			let deviceId: string
+			if (lastSyncDB) {
+				deviceId = lastSyncDB.deviceId || crypto.randomUUID()
+			} else {
+				deviceId = crypto.randomUUID()
+				lastSyncDB = await SyncDB.empty(deviceId)
+			}
 
 			// Step 2: Acquire lock
 			const lock = new SyncLock(webdav, remoteBaseDir, deviceId)
@@ -187,14 +193,11 @@ export class NutstoreSync {
 					remoteDB = await SyncDB.empty('remote')
 				}
 
-				// Step 4: Load lastSyncDB
-				let lastSyncDB = await loadLastSyncDB(
-					this.vault.getName(),
-					remoteBaseDir,
-				)
-				if (!lastSyncDB) {
-					lastSyncDB = await SyncDB.empty(deviceId)
-				}
+				// Step 4: Incremental local scan (uses lastSyncDB to skip unchanged files)
+				const localDB = await SyncDB.fromVault(this.vault, {
+					exclude: filterRules.exclusionRules,
+					include: filterRules.inclusionRules,
+				}, lastSyncDB)
 
 				// Step 5: Decision
 				const decider = new TwoWaySyncDecider(
