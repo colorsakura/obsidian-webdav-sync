@@ -104,7 +104,6 @@ export default class WebdavSyncPlugin extends Plugin {
 			webdavUsername: '',
 			webdavPassword: '',
 			remoteDir: '',
-			remoteCacheDir: '',
 			useGitStyle: false,
 			conflictStrategy: ConflictStrategy.DiffMatchPatch,
 			confirmBeforeSync: true,

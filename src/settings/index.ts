@@ -7,7 +7,6 @@ import type { ConflictStrategy } from '~/sync/tasks/conflict-resolve.task'
 import type { GlobMatchOptions } from '~/utils/glob-match'
 import waitUntil from '~/utils/wait-until'
 import AccountSettings from './account'
-import CacheSettings from './cache'
 import CommonSettings from './common'
 import EncryptionSettingsTab from './encryption'
 import FilterSettings from './filter'
@@ -23,7 +22,6 @@ export interface NutstoreSettings {
 	webdavUsername: string
 	webdavPassword: string
 	remoteDir: string
-	remoteCacheDir?: string
 	useGitStyle: boolean
 	conflictStrategy: ConflictStrategy
 	confirmBeforeSync: boolean
@@ -65,7 +63,6 @@ export class NutstoreSettingTab extends PluginSettingTab {
 	commonSettings: CommonSettings
 	filterSettings: FilterSettings
 	logSettings: LogSettings
-	cacheSettings: CacheSettings
 	encryptionSettings: EncryptionSettingsTab
 	warningContainerEl: HTMLElement
 
@@ -86,12 +83,6 @@ export class NutstoreSettingTab extends PluginSettingTab {
 			this.containerEl.createDiv(),
 		)
 		this.filterSettings = new FilterSettings(
-			this.app,
-			this.plugin,
-			this,
-			this.containerEl.createDiv(),
-		)
-		this.cacheSettings = new CacheSettings(
 			this.app,
 			this.plugin,
 			this,
@@ -119,7 +110,6 @@ export class NutstoreSettingTab extends PluginSettingTab {
 		await this.accountSettings.display()
 		await this.commonSettings.display()
 		await this.filterSettings.display()
-		await this.cacheSettings.display()
 		await this.encryptionSettings.display()
 		await this.logSettings.display()
 	}
