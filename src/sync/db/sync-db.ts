@@ -30,7 +30,10 @@ export interface DBFile {
 	mtime: number
 	size: number
 	hash: string
-	isDir: number // SQLite 用 0/1
+	isDir: number
+	firstSeenAt: number
+	contentChangedAt: number
+	lastSyncedAt: number
 }
 
 export interface FilterRules {
@@ -152,7 +155,7 @@ export class SyncDB {
 
 	getAllFiles(): DBFile[] {
 		const results = this.sqlDb.exec(
-			'SELECT path, mtime, size, hash, is_dir FROM files',
+			'SELECT path, mtime, size, hash, is_dir, first_seen_at, content_changed_at, last_synced_at FROM files',
 		)
 		if (results.length === 0) return []
 		const { columns, values } = results[0]
@@ -161,30 +164,40 @@ export class SyncDB {
 		const sizeIdx = columns.indexOf('size')
 		const hashIdx = columns.indexOf('hash')
 		const isDirIdx = columns.indexOf('is_dir')
+		const firstSeenIdx = columns.indexOf('first_seen_at')
+		const contentChangedIdx = columns.indexOf('content_changed_at')
+		const lastSyncedIdx = columns.indexOf('last_synced_at')
 		return values.map((row) => ({
 			path: row[pathIdx] as string,
 			mtime: row[mtimeIdx] as number,
 			size: row[sizeIdx] as number,
 			hash: row[hashIdx] as string,
 			isDir: row[isDirIdx] as number,
+			firstSeenAt: (row[firstSeenIdx] as number) ?? 0,
+			contentChangedAt: (row[contentChangedIdx] as number) ?? 0,
+			lastSyncedAt: (row[lastSyncedIdx] as number) ?? 0,
 		}))
 	}
 
 	getFile(path: string): DBFile | undefined {
 		const stmt = this.sqlDb.prepare(
-			'SELECT path, mtime, size, hash, is_dir FROM files WHERE path = ?',
+			'SELECT path, mtime, size, hash, is_dir, first_seen_at, content_changed_at, last_synced_at FROM files WHERE path = ?',
 		)
 		stmt.bind([path])
 		if (stmt.step()) {
 			const cols = stmt.getColumnNames()
 			const vals = stmt.get()
 			stmt.free()
+			const v = (col: string) => vals[cols.indexOf(col)] as number | undefined
 			return {
 				path: vals[cols.indexOf('path')] as string,
 				mtime: vals[cols.indexOf('mtime')] as number,
 				size: vals[cols.indexOf('size')] as number,
 				hash: vals[cols.indexOf('hash')] as string,
 				isDir: vals[cols.indexOf('is_dir')] as number,
+				firstSeenAt: v('first_seen_at') ?? 0,
+				contentChangedAt: v('content_changed_at') ?? 0,
+				lastSyncedAt: v('last_synced_at') ?? 0,
 			}
 		}
 		stmt.free()
