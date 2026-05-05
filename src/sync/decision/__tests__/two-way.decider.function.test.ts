@@ -52,6 +52,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'a'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const remoteDB = await SyncDB.empty('device-2')
 		const lastSyncDB = await SyncDB.empty('device-1')
@@ -81,6 +82,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 200,
 			hash: 'b'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const lastSyncDB = await SyncDB.empty('device-1')
 
@@ -107,6 +109,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'c'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const db2 = await SyncDB.empty('device-2')
 		db2.upsertFile({
@@ -115,6 +118,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'c'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const db3 = await SyncDB.empty('device-1')
 		db3.upsertFile({
@@ -123,6 +127,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'c'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 
 		const factory = createMockTaskFactory()
@@ -148,6 +153,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 150,
 			hash: 'new-hash'.padEnd(64, 'x'),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const remoteDB = await SyncDB.empty('device-2')
 		remoteDB.upsertFile({
@@ -156,6 +162,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'old-hash'.padEnd(64, 'x'),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const lastSyncDB = await SyncDB.empty('device-1')
 		lastSyncDB.upsertFile({
@@ -164,6 +171,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'old-hash'.padEnd(64, 'x'),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 
 		const factory = createMockTaskFactory()
@@ -189,6 +197,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 150,
 			hash: 'local-hash'.padEnd(64, 'x'),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const remoteDB = await SyncDB.empty('device-2')
 		remoteDB.upsertFile({
@@ -197,6 +206,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 160,
 			hash: 'remote-hash'.padEnd(64, 'x'),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const lastSyncDB = await SyncDB.empty('device-1')
 		lastSyncDB.upsertFile({
@@ -205,6 +215,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'base-hash'.padEnd(64, 'x'),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 
 		const factory = createMockTaskFactory()
@@ -231,6 +242,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'd'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const lastSyncDB = await SyncDB.empty('device-1')
 		lastSyncDB.upsertFile({
@@ -239,6 +251,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'd'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 
 		const factory = createMockTaskFactory()
@@ -265,6 +278,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'd'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const remoteDB = await SyncDB.empty('device-2')
 		const lastSyncDB = await SyncDB.empty('device-1')
@@ -274,6 +288,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'd'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 
 		const factory = createMockTaskFactory()
@@ -302,6 +317,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'd'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 
 		const factory = createMockTaskFactory()
@@ -332,6 +348,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'a'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const remoteDB = await SyncDB.empty('device-2')
 		const lastSyncDB = await SyncDB.empty('device-1')
@@ -361,6 +378,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 2 * 1024 * 1024,
 			hash: 'a'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const remoteDB = await SyncDB.empty('device-2')
 		const lastSyncDB = await SyncDB.empty('device-1')
@@ -395,6 +413,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 0,
 			hash: '',
 			isDir: 1,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const remoteDB = await SyncDB.empty('device-2')
 		const lastSyncDB = await SyncDB.empty('device-1')
@@ -423,6 +442,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 0,
 			hash: '',
 			isDir: 1,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const remoteDB = await SyncDB.empty('device-2')
 		const lastSyncDB = await SyncDB.empty('device-1')
@@ -456,6 +476,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'd'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		lastSyncDB.upsertFile({
 			path: 'a/b/c/del.md',
@@ -463,11 +484,12 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'd'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 
 		// 需要创建的目录 (浅层)
-		localDB.upsertFile({ path: 'x', mtime: 0, size: 0, hash: '', isDir: 1 })
-		localDB.upsertFile({ path: 'x/y', mtime: 0, size: 0, hash: '', isDir: 1 })
+		localDB.upsertFile({ path: 'x', mtime: 0, size: 0, hash: '', isDir: 1, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0, })
+		localDB.upsertFile({ path: 'x/y', mtime: 0, size: 0, hash: '', isDir: 1, firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0, })
 
 		// 普通文件
 		localDB.upsertFile({
@@ -476,6 +498,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 150,
 			hash: 'new-hash'.padEnd(64, 'x'),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		remoteDB.upsertFile({
 			path: 'push-me.md',
@@ -483,6 +506,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'old-hash'.padEnd(64, 'x'),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		lastSyncDB.upsertFile({
 			path: 'push-me.md',
@@ -490,6 +514,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'old-hash'.padEnd(64, 'x'),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 
 		const factory = createMockTaskFactory()
@@ -524,6 +549,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 100,
 			hash: 'a'.repeat(64),
 			isDir: 0,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const remoteDB = await SyncDB.empty('device-2')
 		remoteDB.upsertFile({
@@ -532,6 +558,7 @@ describe('twoWayDecider (DB-based)', () => {
 			size: 0,
 			hash: '',
 			isDir: 1,
+			firstSeenAt: 0, contentChangedAt: 0, lastSyncedAt: 0,
 		})
 		const lastSyncDB = await SyncDB.empty('device-1')
 
