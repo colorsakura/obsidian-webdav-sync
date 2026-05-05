@@ -4,10 +4,8 @@ import { isNotNil } from 'ramda'
 import type { WebDAVClient } from 'webdav'
 import { createClient } from 'webdav'
 import { useSettings } from '~/settings'
-import { traverseWebDAVKV } from '~/storage/kv'
 import type { ConfigDirSyncMode } from '~/utils/config-dir-rules'
 import { computeEffectiveFilterRulesFromParts } from '~/utils/config-dir-rules'
-import { getTraversalWebDAVDBKey } from '~/utils/get-db-key'
 import type { GlobMatchOptions } from '~/utils/glob-match'
 import GlobMatch, {
 	isVoidGlobMatchOptions,
@@ -42,23 +40,10 @@ export class WebDAVRemoteFileSystem implements AbstractFileSystem {
 		})
 	}
 
-	async clearTraversalCache(): Promise<void> {
-		const kvKey = await getTraversalWebDAVDBKey(
-			this.options.token,
-			this.options.remoteBaseDir,
-		)
-		await traverseWebDAVKV.unset(kvKey)
-	}
-
 	async walk() {
 		const traversal = new ResumableWebDAVTraversal({
 			token: this.options.token,
 			remoteBaseDir: this.options.remoteBaseDir,
-			kvKey: await getTraversalWebDAVDBKey(
-				this.options.token,
-				this.options.remoteBaseDir,
-			),
-			saveInterval: 1,
 			endpoint: this.options.endpoint,
 		})
 		let stats = await traversal.traverse()
