@@ -46,12 +46,12 @@ describe('SyncDB', () => {
 			expect(files.map((f) => f.path)).not.toContain('ignored.txt')
 		})
 
-		it('mtime 相同时应复用 baseDB 的 hash，不调用 readBinary', async () => {
+		it('mtime 相同时应复用 baseDB 的 hash', async () => {
 			const baseDB = await SyncDB.empty('device-1')
 			baseDB.upsertFile({
 				path: 'note.md',
 				mtime: 1000,
-				size: 5,
+				size: 999,
 				hash: 'a'.repeat(64),
 				isDir: 0,
 			})
@@ -64,6 +64,7 @@ describe('SyncDB', () => {
 
 			const file = db.getFile('note.md')!
 			expect(file.hash).toBe('a'.repeat(64))
+			expect(file.size).toBe(5)
 		})
 
 		it('mtime 不同时应重新计算 hash', async () => {
