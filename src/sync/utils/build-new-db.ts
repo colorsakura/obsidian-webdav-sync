@@ -6,35 +6,46 @@ import type { BaseTask, TaskResult } from '../tasks/task.interface'
  * Build a new SyncDB from the local DB and task execution results.
  * This becomes the next lastSyncDB and gets uploaded as remoteDB.
  *
- * For each task:
- * - Successful Pull: re-read local file, compute hash, upsert into newDB
- * - Successful RemoveRemote: remote file deleted, remove from DB
- * - Successful RemoveLocal: local file deleted, remove from DB
- * - Successful Push/Noop/Conflict/Mkdir: already in newDB (from localDB copy)
+ * Starts from the downloaded remoteDB to preserve the remote state.
+ * For successful tasks, updates the entry to reflect the local file state.
+ * For failed tasks, keeps the remoteDB entry so the next sync detects
+ * the discrepancy instead of treating it as already-synced.
  */
 export async function buildNewDB(
 	localDB: SyncDB,
 	tasks: BaseTask[],
 	results: TaskResult[],
+	remoteDB: SyncDB,
 ): Promise<SyncDB> {
-	// Start with a copy of localDB (represents current local state)
-	const buffer = localDB.toBuffer()
+	const buffer = remoteDB.toBuffer()
 	const newDB = await SyncDB.fromBuffer(buffer)
 
 	for (let i = 0; i < tasks.length; i++) {
 		const task = tasks[i]
 		const result = results[i]
-		if (!result?.success) continue
-
-		const taskName = task.constructor.name
 		const path = task.remotePath || task.localPath
 
-		if (taskName.includes('RemoveLocal') || taskName.includes('RemoveRemote')) {
+		if (!result?.success) {
+			// 任务失败：回退为 remoteDB 条目，避免本地旧 hash 污染同步状态
+			const remoteEntry = remoteDB.getFile(path)
+			if (remoteEntry) {
+				newDB.upsertFile(remoteEntry)
+			} else {
+				newDB.deleteFile(path)
+			}
+			continue
+		}
+
+		const taskName = task.constructor.name
+		const isRemove =
+			taskName.includes('RemoveLocal') ||
+			taskName.includes('RemoveRemote') ||
+			taskName.includes('CleanRecord')
+		const isPull = taskName.includes('Pull')
+
+		if (isRemove) {
 			newDB.deleteFile(path)
-		} else if (taskName.includes('Pull')) {
-			// After a successful Pull, the local file has changed (downloaded from remote).
-			// The hash in newDB (copied from localDB, which was scanned BEFORE task
-			// execution) is stale. Re-read the file to get the correct hash.
+		} else if (isPull) {
 			try {
 				const content = await task.vault.adapter.readBinary(task.localPath)
 				const hash = await sha256Hex(content)
@@ -47,12 +58,15 @@ export async function buildNewDB(
 					isDir: 0,
 				})
 			} catch {
-				// If we can't read the file after Pull (unlikely), keep the stale entry
-				// and let the next sync detect the discrepancy.
+				// 无法读取文件，保留 remoteDB 条目让下次同步重试
+			}
+		} else {
+			// Push/Noop/Conflict/Mkdir — 任务成功，local 状态即为同步后的正确状态
+			const localEntry = localDB.getFile(path)
+			if (localEntry) {
+				newDB.upsertFile(localEntry)
 			}
 		}
-		// Push/Noop/Conflict/Mkdir — the file/dir is already in localDB,
-		// so it's already in newDB (we copied from localDB). No update needed.
 	}
 
 	// Bump version
