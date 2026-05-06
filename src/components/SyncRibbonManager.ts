@@ -3,7 +3,7 @@ import logger from '~/utils/logger'
 import { emitCancelSync } from '../events'
 import i18n from '../i18n'
 import type WebdavSyncPlugin from '../index'
-import { NutstoreSync, SyncStartMode } from '../sync'
+import { WebdavSync, SyncStartMode } from '../sync'
 import SyncConfirmModal from './SyncConfirmModal'
 
 export class SyncRibbonManager {
@@ -36,7 +36,7 @@ export class SyncRibbonManager {
 				}
 
 				const startSync = async () => {
-					const sync = new NutstoreSync(this.plugin, {
+					const sync = new WebdavSync(this.plugin, {
 						webdav: await this.plugin.webDAVService.createWebDAVClient(),
 						vault: this.plugin.app.vault,
 						token: await this.plugin.getToken(),

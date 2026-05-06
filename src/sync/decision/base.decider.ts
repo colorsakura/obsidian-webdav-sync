@@ -1,9 +1,9 @@
-import type { NutstoreSync } from '..'
+import type { WebdavSync } from '..'
 import type { WebDAVClient } from 'webdav'
 import type { Vault } from 'obsidian'
 
 export default class BaseSyncDecider {
-	constructor(public sync: NutstoreSync) {}
+	constructor(public sync: WebdavSync) {}
 
 	get webdav(): WebDAVClient {
 		return this.sync.webdav

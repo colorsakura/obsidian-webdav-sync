@@ -21,7 +21,7 @@ export enum SyncStartMode {
 	AUTO_SYNC = 'auto_sync',
 }
 
-export class NutstoreSync {
+export class WebdavSync {
 	isCancelled: boolean = false
 
 	private subscriptions: Subscription[] = []

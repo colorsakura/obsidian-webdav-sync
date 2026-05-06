@@ -1,5 +1,5 @@
 import type { SyncStartMode } from '~/sync'
-import { NutstoreSync } from '~/sync'
+import { WebdavSync } from '~/sync'
 import waitUntil from '~/utils/wait-until'
 import type NutstorePlugin from '..'
 
@@ -22,7 +22,7 @@ export default class SyncExecutorService {
 
 		await waitUntil(() => !this.plugin.isSyncing, 500)
 
-		const sync = new NutstoreSync(this.plugin, {
+		const sync = new WebdavSync(this.plugin, {
 			vault: this.plugin.app.vault,
 			token: await this.plugin.getToken(),
 			remoteBaseDir: this.plugin.remoteBaseDir,
