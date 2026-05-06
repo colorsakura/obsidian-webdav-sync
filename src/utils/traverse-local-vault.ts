@@ -13,8 +13,7 @@ export async function traverseLocalVault(vault: Vault, from: string) {
 	)
 	function folderFilter(path: string) {
 		path = normalizePath(path)
-		return !ignores.some((rule) => rule.test(path));
-
+		return !ignores.some((rule) => rule.test(path))
 	}
 
 	while (q.length > 0) {

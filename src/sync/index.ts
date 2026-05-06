@@ -118,5 +118,4 @@ export class NutstoreSync {
 	get endpoint() {
 		return this.plugin.settings.webdavEndpoint
 	}
-
 }
