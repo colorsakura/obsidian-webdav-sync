@@ -133,6 +133,7 @@ export async function confirm(
 						remotePath: parentRemotePath,
 						localPath: parentLocalPath,
 						encryptionKey: prep.encryptionKey,
+						plugin: ctx.plugin,
 					})
 					mkdirTasksMap.set(parentRemotePath, mkdirTask)
 				}

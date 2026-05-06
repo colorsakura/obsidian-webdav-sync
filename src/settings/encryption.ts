@@ -83,6 +83,18 @@ export default class EncryptionSettingsTab extends BaseSettings {
 			)
 
 		if (plugin.settings.encryption.enabled) {
+			new Setting(containerEl)
+				.setName('启用压缩')
+				.setDesc('加密前先压缩，可减少存储空间占用。适用于文本文件。')
+				.addToggle((toggle) =>
+					toggle
+						.setValue(plugin.settings.encryption.enableCompression)
+						.onChange(async (enabled) => {
+							plugin.settings.encryption.enableCompression = enabled
+							await plugin.saveSettings()
+						}),
+				)
+
 			const key = await loadEncryptionKey(this.app, plugin.settings.encryption)
 
 			if (!key) {

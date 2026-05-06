@@ -27,7 +27,7 @@ export class WebdavSync {
 	private subscriptions: Subscription[] = []
 
 	constructor(
-		private plugin: NutstorePlugin,
+		public plugin: NutstorePlugin,
 		private options: {
 			vault: Vault
 			token: string

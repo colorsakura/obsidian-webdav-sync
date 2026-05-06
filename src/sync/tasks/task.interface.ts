@@ -3,6 +3,7 @@ import { normalizePath } from 'obsidian'
 import { isAbsolute, join } from 'path-browserify'
 import type { WebDAVClient } from 'webdav'
 import type { MaybePromise } from '~/utils/types'
+import type WebdavSyncPlugin from '~/index'
 
 export interface BaseTaskOptions {
 	vault: Vault
@@ -12,6 +13,8 @@ export interface BaseTaskOptions {
 	localPath: string
 	/** 端到端加密密钥，未启用加密时为 null */
 	encryptionKey?: CryptoKey | null
+	/** 插件实例，用于访问设置 */
+	plugin: WebdavSyncPlugin
 }
 
 interface TaskSuccessResult {
@@ -50,6 +53,10 @@ export abstract class BaseTask {
 
 	get localPath() {
 		return normalizePath(this.options.localPath)
+	}
+
+	get plugin(): WebdavSyncPlugin {
+		return this.options.plugin
 	}
 
 	abstract exec(): MaybePromise<TaskResult>

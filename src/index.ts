@@ -118,11 +118,12 @@ export default class WebdavSyncPlugin extends Plugin {
 			},
 			realtimeSync: false,
 			startupSyncDelaySeconds: 0,
-			autoSyncIntervalSeconds: 300,
+			autoSyncIntervalSeconds: 0,
 			language: undefined,
 			configDirSyncMode: 'none',
 			encryption: {
 				enabled: false,
+				enableCompression: false,
 				secretId: 'nutstore-encryption-key',
 				salt: '',
 				keyHash: '',

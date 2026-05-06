@@ -4,26 +4,41 @@
  * 全部使用浏览器内置 crypto.subtle (Web Crypto API)，零外部依赖
  */
 
-import { isEncrypted, packHeader, unpackHeader } from './file-header'
+import { packHeader, unpackHeader } from './file-header'
+import { compressGzip, decompressGzip } from './compression'
 
 /**
- * 加密二进制数据
+ * 加密并可选压缩二进制数据
  *
  * @param plaintext - 原始明文 ArrayBuffer
  * @param key - AES-256-GCM CryptoKey
+ * @param enableCompression - 是否先压缩再加密（仅在加密启用时有效）
  * @returns 带 header 的密文 ArrayBuffer
  */
 export async function encrypt(
 	plaintext: ArrayBuffer,
 	key: CryptoKey,
+	enableCompression: boolean = false,
 ): Promise<ArrayBuffer> {
+	// 先压缩（仅当启用压缩且加密时才进行）
+	let dataToEncrypt = plaintext
+	let compressed = false
+	if (enableCompression) {
+		const compressedData = await compressGzip(plaintext)
+		// 仅当压缩后更小时使用压缩
+		if (compressedData.byteLength < plaintext.byteLength) {
+			dataToEncrypt = compressedData
+			compressed = true
+		}
+	}
+
 	const nonce = crypto.getRandomValues(new Uint8Array(12))
 	const ciphertext = await crypto.subtle.encrypt(
 		{ name: 'AES-GCM', iv: nonce as BufferSource },
 		key,
-		plaintext,
+		dataToEncrypt,
 	)
-	return packHeader(nonce, ciphertext)
+	return packHeader(nonce, ciphertext, compressed)
 }
 
 /**
@@ -39,15 +54,18 @@ export async function decrypt(
 	wireData: ArrayBuffer,
 	key: CryptoKey,
 ): Promise<ArrayBuffer> {
-	// 明文文件，兼容旧数据
-	if (!isEncrypted(wireData)) {
-		return wireData
-	}
+	const { nonce, ciphertext, compressed } = unpackHeader(wireData)
 
-	const { nonce, ciphertext } = unpackHeader(wireData)
-	return crypto.subtle.decrypt(
+	const plaintext = await crypto.subtle.decrypt(
 		{ name: 'AES-GCM', iv: nonce as BufferSource },
 		key,
 		ciphertext,
 	)
+
+	// 如果标记为压缩，则解压
+	if (compressed) {
+		return decompressGzip(plaintext)
+	}
+
+	return plaintext
 }

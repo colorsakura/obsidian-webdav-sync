@@ -6,12 +6,15 @@
  */
 
 export { encrypt, decrypt } from './cipher'
+export { compressGzip, decompressGzip } from './compression'
 export { deriveKey, getPBKDF2Iterations } from './key-derivation'
 export {
 	isEncrypted,
+	isCompressed,
 	HEADER_SIZE,
 	GCM_TAG_SIZE,
 	ENCRYPTION_OVERHEAD,
+	FLAG_COMPRESSED,
 } from './file-header'
 export {
 	setupEncryption,

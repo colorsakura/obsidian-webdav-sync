@@ -13,9 +13,15 @@ export default class PushTask extends BaseTask {
 
 			let content = await this.vault.adapter.readBinary(this.localPath)
 
-			// 端到端加密
+			// 端到端加密 + 压缩
 			if (this.options.encryptionKey) {
-				content = await encrypt(content, this.options.encryptionKey)
+				const enableCompression =
+					this.plugin.settings.encryption.enableCompression
+				content = await encrypt(
+					content,
+					this.options.encryptionKey,
+					enableCompression,
+				)
 			}
 
 			try {

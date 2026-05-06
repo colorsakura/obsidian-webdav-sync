@@ -20,6 +20,7 @@ import RemoveLocalTask from '../tasks/remove-local.task'
 import RemoveRemoteTask from '../tasks/remove-remote.task'
 import SkippedTask from '../tasks/skipped.task'
 import type { BaseTask } from '../tasks/task.interface'
+import type WebdavSyncPlugin from '~/index'
 
 export default class TwoWaySyncDecider extends BaseSyncDecider {
 	constructor(
@@ -124,6 +125,7 @@ export default class TwoWaySyncDecider extends BaseSyncDecider {
 			webdav: this.webdav,
 			vault: this.vault,
 			remoteBaseDir: this.remoteBaseDir,
+			plugin: this.sync.plugin as WebdavSyncPlugin,
 		}
 	}
 }
