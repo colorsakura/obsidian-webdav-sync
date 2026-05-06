@@ -20,6 +20,7 @@ export async function decide(
 		vault: ctx.vault,
 		remoteBaseDir: ctx.remoteBaseDir,
 		settings: ctx.settings,
+		plugin: ctx.plugin,
 	} as any
 
 	const decider = new TwoWaySyncDecider(

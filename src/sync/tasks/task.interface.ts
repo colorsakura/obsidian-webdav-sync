@@ -31,6 +31,8 @@ interface TaskFailureResult {
 export type TaskResult = TaskSuccessResult | TaskFailureResult
 
 export abstract class BaseTask {
+	abstract type: string
+
 	constructor(readonly options: BaseTaskOptions) {}
 
 	get vault() {

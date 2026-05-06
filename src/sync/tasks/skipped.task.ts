@@ -33,6 +33,8 @@ export type SkippedTaskOptions = BaseTaskOptions &
 	)
 
 export default class SkippedTask extends BaseTask {
+	type = 'skipped'
+
 	constructor(readonly options: SkippedTaskOptions) {
 		super(options)
 	}

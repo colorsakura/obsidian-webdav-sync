@@ -8,6 +8,8 @@ import type { BaseTaskOptions } from './task.interface'
 import { BaseTask, toTaskError } from './task.interface'
 
 export default class PullTask extends BaseTask {
+	type = 'pull'
+
 	constructor(
 		readonly options: BaseTaskOptions & {
 			remoteSize: number

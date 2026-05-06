@@ -15,6 +15,7 @@ interface MkdirsRemoteTaskOptions extends BaseTaskOptions {
  * Stores all paths for sync record updates.
  */
 export default class MkdirsRemoteTask extends BaseTask {
+	type = 'mkdir-remote'
 	readonly additionalPaths: Array<{ localPath: string; remotePath: string }>
 
 	constructor(options: MkdirsRemoteTaskOptions) {

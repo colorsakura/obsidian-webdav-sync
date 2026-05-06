@@ -33,6 +33,8 @@ export class FilenameError extends Error {
  * 此时可以创建该任务, 不做任何操作. 只在任务列表里告诉用户文件名有问题.
  */
 export default class FilenameErrorTask extends BaseTask {
+	type = 'filename-error'
+
 	exec() {
 		const invalidChars = getInvalidChars(this.localPath)
 		return {

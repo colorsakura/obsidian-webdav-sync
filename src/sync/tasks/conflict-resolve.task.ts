@@ -22,6 +22,8 @@ import { ConflictStrategy } from './conflict-strategy'
 export { ConflictStrategy }
 
 export default class ConflictResolveTask extends BaseTask {
+	type = 'conflict-resolve'
+
 	constructor(
 		public readonly options: BaseTaskOptions & {
 			record?: {

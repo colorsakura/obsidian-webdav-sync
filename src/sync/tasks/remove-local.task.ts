@@ -4,6 +4,8 @@ import type { BaseTaskOptions } from './task.interface'
 import { BaseTask, toTaskError } from './task.interface'
 
 export default class RemoveLocalTask extends BaseTask {
+	type = 'remove-local'
+
 	constructor(
 		public readonly options: BaseTaskOptions & {
 			recursive?: boolean

@@ -412,11 +412,10 @@ export async function twoWayDecider(
 	const removeTypes = new Set(['remove-local', 'remove-remote'])
 	const mkdirTypes = new Set(['mkdir-local', 'mkdir-remote'])
 
-	const removeTasks = tasks.filter((t) => removeTypes.has((t as any).type))
-	const mkdirTasks = tasks.filter((t) => mkdirTypes.has((t as any).type))
+	const removeTasks = tasks.filter((t) => removeTypes.has(t.type))
+	const mkdirTasks = tasks.filter((t) => mkdirTypes.has(t.type))
 	const fileTasks = tasks.filter(
-		(t) =>
-			!removeTypes.has((t as any).type) && !mkdirTypes.has((t as any).type),
+		(t) => !removeTypes.has(t.type) && !mkdirTypes.has(t.type),
 	)
 
 	// Remove tasks: deepest first (descending depth)

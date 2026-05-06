@@ -4,6 +4,8 @@ import { statVaultItem } from '~/utils/stat-vault-item'
 import { BaseTask, toTaskError } from './task.interface'
 
 export default class MkdirRemoteTask extends BaseTask {
+	type = 'mkdir-remote'
+
 	async exec() {
 		try {
 			const localStat = await statVaultItem(this.vault, this.localPath)

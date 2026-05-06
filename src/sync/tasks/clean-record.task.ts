@@ -6,6 +6,8 @@ import { BaseTask } from './task.interface'
  * 此任务仅返回成功，不执行任何操作。
  */
 export default class CleanRecordTask extends BaseTask {
+	type = 'clean-record'
+
 	exec() {
 		return { success: true, skipRecord: true } as const
 	}

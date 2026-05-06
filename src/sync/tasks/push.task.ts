@@ -4,6 +4,8 @@ import logger from '~/utils/logger'
 import { BaseTask, toTaskError } from './task.interface'
 
 export default class PushTask extends BaseTask {
+	type = 'push'
+
 	async exec() {
 		try {
 			const exists = await this.vault.adapter.exists(this.localPath)

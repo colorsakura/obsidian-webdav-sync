@@ -3,6 +3,8 @@ import { mkdirsVault } from '~/utils/mkdirs-vault'
 import { BaseTask, toTaskError } from './task.interface'
 
 export default class MkdirLocalTask extends BaseTask {
+	type = 'mkdir-local'
+
 	async exec() {
 		try {
 			await mkdirsVault(this.vault, this.localPath)
