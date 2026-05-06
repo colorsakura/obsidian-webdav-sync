@@ -42,8 +42,6 @@
     "fast-xml-parser": "^5.7.2",
     "glob-to-regexp": "^0.4.1",
     "globals": "^17.6.0",
-    "hash-wasm": "^4.12.0",
-    "html-entities": "^2.6.0",
     "http-status-codes": "^2.3.0",
     "i18next": "^26.0.8",
     "js-base64": "^3.7.7",
@@ -51,17 +49,13 @@
     "lodash-es": "^4.17.21",
     "node-diff3": "^3.1.2",
     "obsidian": "latest",
-    "ohash": "^2.0.11",
     "path-browserify": "^1.0.1",
     "postcss-merge-rules": "^7.0.4",
     "prettier": "^3.5.0",
     "ramda": "^0.32.0",
     "rxjs": "^7.8.1",
     "stream-browserify": "^3.0.0",
-    "superjson": "^2.2.2",
-    "tslib": "2.4.0",
     "typescript": "^6.0.3",
-    "uuid": "^14.0.0",
     "vitest": "^4.1.5",
     "webdav": "^5.9.0",
     "webdav-explorer": "workspace: *"
@@ -76,8 +70,6 @@
     "packages/*"
   ],
   "dependencies": {
-    "moment": "^2.30.1",
-    "sql.js": "^1.14.1",
-    "webdav-server": "^2.6.2"
+    "sql.js": "^1.14.1"
   }
 }
