@@ -6,10 +6,10 @@
  * │  Header (明文，19 bytes)              │
  * │  ├── magic:     "OBSENC"  (6 bytes)  │  识别加密文件
  * │  ├── version:   0x01      (1 byte)   │  格式版本
- * │  └── nonce:     随机      (12 bytes) │  AES-GCM IV
+ * │  └── nonce:     随机      (12 bytes)  │  AES-GCM IV
  * ├──────────────────────────────────────┤
  * │  Ciphertext + Auth Tag               │  AES-256-GCM 加密的原始内容
- * │  (原始文件大小 + 16 bytes tag)        │
+ * │  (原始文件大小 + 16 bytes tag)         │
  * └──────────────────────────────────────┘
  */
 

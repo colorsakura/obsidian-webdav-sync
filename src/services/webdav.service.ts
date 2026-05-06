@@ -1,7 +1,7 @@
 import type { WebDAVClient } from 'webdav'
 import { createClient } from 'webdav'
 import type WebdavSyncPlugin from '../index'
-import { createRateLimitedWebDAVClient } from '../utils/rate-limited-client'
+import { createRateLimitedWebDAVClient } from '~/utils/rate-limited-client'
 
 export class WebDAVService {
 	constructor(private plugin: WebdavSyncPlugin) {}

@@ -82,7 +82,7 @@ export async function setupEncryption(
 
 	const { hexKey, hash } = await deriveAndHash(password, salt, iterations)
 
-	await app.secretStorage.setSecret(SECRET_ID, hexKey)
+	app.secretStorage.setSecret(SECRET_ID, hexKey)
 
 	encryption.enabled = true
 	encryption.secretId = SECRET_ID
@@ -231,7 +231,7 @@ export async function restoreEncryption(
 	if (matchedIterations === null) return false
 
 	const { hexKey } = await deriveAndHash(password, salt, matchedIterations)
-	await app.secretStorage.setSecret(SECRET_ID, hexKey)
+	app.secretStorage.setSecret(SECRET_ID, hexKey)
 
 	// 补齐迭代次数到配置中，后续不再需要重试
 	if (!encryption.iterations) {
