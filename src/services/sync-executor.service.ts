@@ -7,7 +7,7 @@ export interface SyncOptions {
 	mode: SyncStartMode
 }
 
-export default class SyncExecutorService {
+export class SyncExecutorService {
 	constructor(private plugin: NutstorePlugin) {}
 
 	async executeSync(options: SyncOptions) {

@@ -6,7 +6,7 @@ import zh from './locales/zh'
 export type Locale = 'zh' | 'en'
 
 export function toLocale(language: string) {
-	switch (language.split('-')[0].toLowerCase()) {
+	switch (language.split('-')[0]?.toLowerCase()) {
 		case 'zh':
 			return 'zh'
 		default:

@@ -47,7 +47,7 @@ export default class DeleteConfirmModal extends Modal {
 			checkboxCell.style.textAlign = 'center'
 			const checkbox = checkboxCell.createEl('input')
 			checkbox.type = 'checkbox'
-			checkbox.checked = this.selectedTasks[index]
+			checkbox.checked = this.selectedTasks[index]!
 			checkbox.addEventListener('change', (e) => {
 				this.selectedTasks[index] = checkbox.checked
 				e.stopPropagation()
@@ -99,10 +99,10 @@ export default class DeleteConfirmModal extends Modal {
 					return
 				}
 				const tasksToDelete = this.tasks.filter(
-					(_, index) => this.selectedTasks[index],
+					(_, index) => this.selectedTasks[index]!,
 				)
 				const tasksToReupload = this.tasks.filter(
-					(_, index) => !this.selectedTasks[index],
+					(_, index) => !this.selectedTasks[index]!,
 				)
 				resolve({
 					tasksToDelete,

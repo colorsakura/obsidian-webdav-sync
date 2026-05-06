@@ -8,7 +8,7 @@ export function createRateLimitedWebDAVClient(
 		get(target, prop, receiver) {
 			const value = Reflect.get(target, prop, receiver)
 			if (typeof value === 'function') {
-				return (...args: any[]) => {
+				return (...args: unknown[]) => {
 					return apiLimiter.schedule(() => value.apply(target, args))
 				}
 			}

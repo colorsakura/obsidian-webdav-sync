@@ -11,7 +11,7 @@ import sleep from '~/utils/sleep'
 interface WebDAVPropstat {
 	prop: {
 		displayname: string
-		resourcetype: { collection?: any }
+		resourcetype: { collection?: unknown }
 		getlastmodified?: string
 		getcontentlength?: string
 		getcontenttype?: string
@@ -30,7 +30,7 @@ interface WebDAVResponse {
 
 function extractNextLink(linkHeader: string): string | null {
 	const matches = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
-	return matches ? matches[1] : null
+	return matches?.[1] ?? null
 }
 
 /**
@@ -41,7 +41,7 @@ function getBestPropstat(
 	propstat: WebDAVPropstat | WebDAVPropstat[],
 ): WebDAVPropstat {
 	if (Array.isArray(propstat)) {
-		return propstat.find((ps) => ps.status?.includes('200')) || propstat[0]
+		return propstat.find((ps) => ps.status?.includes('200')) ?? propstat[0]!
 	}
 	return propstat
 }
@@ -63,7 +63,7 @@ function convertToFileStat(
 		size: props.getcontentlength ? parseInt(props.getcontentlength, 10) : 0,
 		type: isDir ? 'directory' : 'file',
 		etag: null,
-		mime: props.getcontenttype,
+		mime: props.getcontenttype ?? undefined,
 	}
 }
 

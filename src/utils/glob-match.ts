@@ -90,7 +90,7 @@ export default class GlobMatch {
 			if (!isSegmentDir) {
 				continue
 			}
-			if (this.segmentRegex?.test(segments[i])) {
+			if (this.segmentRegex?.test(segments[i]!)) {
 				return true
 			}
 		}

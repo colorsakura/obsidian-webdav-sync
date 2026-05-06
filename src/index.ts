@@ -10,16 +10,15 @@ import { toBase64 } from 'js-base64'
 import { normalizePath, Plugin } from 'obsidian'
 import { SyncRibbonManager } from './components/SyncRibbonManager'
 import { emitCancelSync } from './events'
-import i18n from './i18n'
-import CommandService from './services/command.service'
-import EventsService from './services/events.service'
-import I18nService from './services/i18n.service'
-import LoggerService from './services/logger.service'
+import { CommandService } from './services/command.service'
+import { EventsService } from './services/events.service'
+import { I18nService } from './services/i18n.service'
+import { LoggerService } from './services/logger.service'
 import { ProgressService } from './services/progress.service'
-import RealtimeSyncService from './services/realtime-sync.service'
-import ScheduledSyncService from './services/scheduled-sync.service'
+import { RealtimeSyncService } from './services/realtime-sync.service'
+import { ScheduledSyncService } from './services/scheduled-sync.service'
 import { StatusService } from './services/status.service'
-import SyncExecutorService from './services/sync-executor.service'
+import { SyncExecutorService } from './services/sync-executor.service'
 import { WebDAVService } from './services/webdav.service'
 import {
 	NutstoreSettings,
@@ -31,24 +30,26 @@ import { ConflictStrategy } from '~/sync/tasks/conflict-strategy'
 import { GlobMatchOptions } from './utils/glob-match'
 import { stdRemotePath } from './utils/std-remote-path'
 
-export default class WebdavSyncPlugin extends Plugin {
+export class WebdavSyncPlugin extends Plugin {
 	public isSyncing: boolean = false
 	public settings!: NutstoreSettings
 
-	public commandService = new CommandService(this)
-	public eventsService = new EventsService(this)
-	public i18nService = new I18nService(this)
-	public loggerService = new LoggerService(this)
-	public progressService = new ProgressService(this)
-	public ribbonManager = new SyncRibbonManager(this)
-	public statusService = new StatusService(this)
-	public webDAVService = new WebDAVService(this)
-	public syncExecutorService = new SyncExecutorService(this)
-	public realtimeSyncService = new RealtimeSyncService(
+	public commandService: CommandService = new CommandService(this)
+	public eventsService: EventsService = new EventsService(this)
+	public i18nService: I18nService = new I18nService(this)
+	public loggerService: LoggerService = new LoggerService(this)
+	public progressService: ProgressService = new ProgressService(this)
+	public ribbonManager: SyncRibbonManager = new SyncRibbonManager(this)
+	public statusService: StatusService = new StatusService(this)
+	public webDAVService: WebDAVService = new WebDAVService(this)
+	public syncExecutorService: SyncExecutorService = new SyncExecutorService(
+		this,
+	)
+	public realtimeSyncService: RealtimeSyncService = new RealtimeSyncService(
 		this,
 		this.syncExecutorService,
 	)
-	public scheduledSyncService = new ScheduledSyncService(
+	public scheduledSyncService: ScheduledSyncService = new ScheduledSyncService(
 		this,
 		this.syncExecutorService,
 	)
@@ -171,3 +172,5 @@ export default class WebdavSyncPlugin extends Plugin {
 		return stdRemotePath(remoteDir)
 	}
 }
+
+export default WebdavSyncPlugin

@@ -72,7 +72,7 @@ export class ResumableWebDAVTraversal {
 
 	private async bfsTraverse(): Promise<void> {
 		while (this.queue.length > 0) {
-			const currentPath = this.queue[0]
+			const currentPath = this.queue[0]!
 			const normalizedPath = stdRemotePath(currentPath)
 
 			try {

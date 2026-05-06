@@ -44,7 +44,7 @@ export async function buildNewDB(
 
 	// Apply task execution results
 	for (let i = 0; i < tasks.length; i++) {
-		const task = tasks[i]
+		const task = tasks[i]!
 		const result = results[i]
 		if (!result?.success) continue
 

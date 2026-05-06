@@ -19,7 +19,7 @@ export class SyncLock {
 
 	constructor(
 		private webdav: WebDAVClient,
-		private remoteBaseDir: string,
+		remoteBaseDir: string,
 		private deviceId: string,
 		private timeoutMs: number = 5 * 60 * 1000,
 	) {

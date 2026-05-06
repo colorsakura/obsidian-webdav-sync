@@ -1,8 +1,6 @@
 import type { Vault } from 'obsidian'
 import { isAbsolute } from 'path-browserify'
 import { isNotNil } from 'ramda'
-import type { WebDAVClient } from 'webdav'
-import { createClient } from 'webdav'
 import { useSettings } from '~/settings'
 import type { ConfigDirSyncMode } from '~/utils/config-dir-rules'
 import { computeEffectiveFilterRulesFromParts } from '~/utils/config-dir-rules'
@@ -17,8 +15,6 @@ import { ResumableWebDAVTraversal } from '~/utils/traverse-webdav'
 import type AbstractFileSystem from './fs.interface'
 
 export class WebDAVRemoteFileSystem implements AbstractFileSystem {
-	private webdav: WebDAVClient
-
 	constructor(
 		private options: {
 			vault: Vault
@@ -32,13 +28,7 @@ export class WebDAVRemoteFileSystem implements AbstractFileSystem {
 				configDirSyncMode?: ConfigDirSyncMode
 			}
 		},
-	) {
-		this.webdav = createClient(options.endpoint, {
-			headers: {
-				Authorization: `Basic ${this.options.token}`,
-			},
-		})
-	}
+	) {}
 
 	async walk() {
 		const traversal = new ResumableWebDAVTraversal({

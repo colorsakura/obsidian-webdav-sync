@@ -387,7 +387,6 @@ export async function twoWayDecider(
 	for (const p of dirPaths) {
 		const local = localFiles.get(p)
 		const remote = remoteFiles.get(p)
-		const last = lastSyncFiles.get(p)
 
 		if (local && remote) {
 			logger.debug(`Noop dir — "${p}"`)
@@ -439,7 +438,7 @@ function toStat(f: DBFile): {
 		mtime: f.mtime,
 		size: f.size,
 		path: f.path,
-		basename: parts[parts.length - 1],
+		basename: parts[parts.length - 1]!,
 		isDir: false,
 		isDeleted: false,
 	}

@@ -82,7 +82,7 @@ export function packHeader(
  * 解包 header: 从加密数据中提取 nonce、ciphertext 和压缩标志
  */
 export function unpackHeader(wireData: ArrayBuffer): FileHeader {
-	const flags = new Uint8Array(wireData, FLAGS_OFFSET, 1)[0]
+	const flags = new Uint8Array(wireData, FLAGS_OFFSET, 1)[0]!
 	const nonce = new Uint8Array(wireData, NONCE_OFFSET, 12)
 	const ciphertext = wireData.slice(HEADER_SIZE)
 	return {

@@ -59,7 +59,7 @@ async function execTasks(
 	})
 
 	for (let i = 0; i < tasks.length; ++i) {
-		const task = tasks[i]
+		const task = tasks[i]!
 		if (isCancelled()) {
 			emitSyncError(new TaskError(i18n.t('sync.cancelled'), task))
 			break

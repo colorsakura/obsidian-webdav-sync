@@ -150,7 +150,7 @@ export async function migrateToEncrypted(
 	let failed = 0
 
 	for (let i = 0; i < plainFiles.length; i++) {
-		const file = plainFiles[i]
+		const file = plainFiles[i]!
 		onProgress(i + 1, plainFiles.length, file.remotePath)
 
 		try {
@@ -210,7 +210,7 @@ export async function reEncryptAllFiles(
 	let failed = 0
 
 	for (let i = 0; i < encryptedFiles.length; i++) {
-		const file = encryptedFiles[i]
+		const file = encryptedFiles[i]!
 		onProgress(i + 1, encryptedFiles.length, file.remotePath)
 
 		try {
@@ -310,7 +310,7 @@ export async function findLocalEncryptedFiles(
 	const total = allFiles.length
 
 	for (let i = 0; i < allFiles.length; i++) {
-		const filePath = allFiles[i]
+		const filePath = allFiles[i]!
 		onProgress?.(i + 1, total, filePath)
 
 		try {
@@ -357,7 +357,7 @@ export async function repairLocalEncryptedFiles(
 	let writeErrors = 0
 
 	for (let i = 0; i < encryptedFiles.length; i++) {
-		const { path: filePath, data } = encryptedFiles[i]
+		const { path: filePath, data } = encryptedFiles[i]!
 		onProgress?.(i + 1, encryptedFiles.length, filePath)
 
 		try {

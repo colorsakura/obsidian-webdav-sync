@@ -1,3 +1,7 @@
+@AGENTS.md
+
 # CLAUDE.md
 
-@AGENTS.md
+## Rules
+
+- 必须使用中文回复和思考

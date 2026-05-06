@@ -86,13 +86,14 @@ export async function finalize(
 	if (mode === SyncStartMode.MANUAL_SYNC && failedCount > 0) {
 		const failedTasksInfo: FailedTaskInfo[] = []
 		for (let i = 0; i < allTasksResult.length; i++) {
-			const result = allTasksResult[i]
-			if (!result.success && result.error) {
-				const task = result.error.task
+			const result = allTasksResult[i]!
+			const error = 'error' in result ? result.error : undefined
+			if (!result.success && error) {
+				const task = error.task
 				failedTasksInfo.push({
 					taskName: getTaskName(task),
 					localPath: task.options.localPath,
-					errorMessage: result.error.message,
+					errorMessage: error.message,
 				})
 			}
 		}

@@ -6,7 +6,7 @@ import { WebdavSync, SyncStartMode } from '~/sync'
 import logger from '~/utils/logger'
 import type NutstorePlugin from '..'
 
-export default class CommandService {
+export class CommandService {
 	constructor(plugin: NutstorePlugin) {
 		plugin.addCommand({
 			id: 'start-sync',

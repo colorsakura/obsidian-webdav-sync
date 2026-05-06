@@ -43,7 +43,7 @@ export default class TaskListConfirmModal extends Modal {
 			const checkboxCell = row.createEl('td')
 			const checkbox = checkboxCell.createEl('input')
 			checkbox.type = 'checkbox'
-			checkbox.checked = this.selectedTasks[index]
+			checkbox.checked = this.selectedTasks[index]!
 			checkbox.addEventListener('change', (e) => {
 				this.selectedTasks[index] = checkbox.checked
 				e.stopPropagation()
@@ -86,7 +86,7 @@ export default class TaskListConfirmModal extends Modal {
 		return new Promise((resolve) => {
 			this.onClose = () => {
 				const selectedTasks = this.tasks.filter(
-					(_, index) => this.selectedTasks[index],
+					(_, index) => this.selectedTasks[index]!,
 				)
 				resolve({
 					confirm: this.result,

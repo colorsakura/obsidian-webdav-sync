@@ -24,7 +24,7 @@ export enum SyncStartMode {
 export class WebdavSync {
 	isCancelled: boolean = false
 
-	private subscriptions: Subscription[] = []
+	private readonly subscriptions: Subscription[] = []
 
 	constructor(
 		public plugin: NutstorePlugin,

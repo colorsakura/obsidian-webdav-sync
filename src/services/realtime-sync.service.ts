@@ -3,9 +3,9 @@ import { useSettings } from '~/settings'
 import { SyncStartMode } from '~/sync'
 import waitUntil from '~/utils/wait-until'
 import type NutstorePlugin from '..'
-import type SyncExecutorService from './sync-executor.service'
+import type { SyncExecutorService } from './sync-executor.service'
 
-export default class RealtimeSyncService {
+export class RealtimeSyncService {
 	private waiting = false
 
 	private submitDirectly = async () => {

@@ -2,14 +2,14 @@ import { clamp } from 'lodash-es'
 import { useSettings } from '~/settings'
 import { SyncStartMode } from '~/sync'
 import type NutstorePlugin from '..'
-import type SyncExecutorService from './sync-executor.service'
+import type { SyncExecutorService } from './sync-executor.service'
 
-export default class ScheduledSyncService {
+export class ScheduledSyncService {
 	private autoSyncTimer: number | null = null
 	private startupSyncTimer: number | null = null
 
 	constructor(
-		private plugin: NutstorePlugin,
+		_plugin: NutstorePlugin,
 		private syncExecutor: SyncExecutorService,
 	) {}
 

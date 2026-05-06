@@ -3,8 +3,8 @@ import { useSettings } from '~/settings'
 import logger from '~/utils/logger'
 import type NutstorePlugin from '..'
 
-export default class I18nService {
-	constructor(private plugin: NutstorePlugin) {
+export class I18nService {
+	constructor(_plugin: NutstorePlugin) {
 		this.update()
 	}
 
@@ -14,7 +14,7 @@ export default class I18nService {
 			if (settings.language) {
 				i18n.changeLanguage(settings.language.toLowerCase())
 			} else {
-				const code = navigator.language.split('-')[0]
+				const code = navigator.language.split('-')[0] ?? 'en'
 				i18n.changeLanguage(code.toLowerCase())
 			}
 		} catch (e) {

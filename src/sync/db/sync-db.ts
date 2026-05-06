@@ -183,8 +183,9 @@ export class SyncDB {
 		const results = this.sqlDb.exec(
 			'SELECT path, mtime, size, hash, is_dir, first_seen_at, content_changed_at, last_synced_at FROM files',
 		)
-		if (results.length === 0) return []
-		const { columns, values } = results[0]
+		const result = results[0]
+		if (!result) return []
+		const { columns, values } = result
 		const pathIdx = columns.indexOf('path')
 		const mtimeIdx = columns.indexOf('mtime')
 		const sizeIdx = columns.indexOf('size')
@@ -216,11 +217,11 @@ export class SyncDB {
 			stmt.free()
 			const v = (col: string) => vals[cols.indexOf(col)] as number | undefined
 			return {
-				path: vals[cols.indexOf('path')] as string,
-				mtime: vals[cols.indexOf('mtime')] as number,
-				size: vals[cols.indexOf('size')] as number,
-				hash: vals[cols.indexOf('hash')] as string,
-				isDir: vals[cols.indexOf('is_dir')] as number,
+				path: vals[cols.indexOf('path')]! as string,
+				mtime: vals[cols.indexOf('mtime')]! as number,
+				size: vals[cols.indexOf('size')]! as number,
+				hash: vals[cols.indexOf('hash')]! as string,
+				isDir: vals[cols.indexOf('is_dir')]! as number,
 				firstSeenAt: v('first_seen_at') ?? 0,
 				contentChangedAt: v('content_changed_at') ?? 0,
 				lastSyncedAt: v('last_synced_at') ?? 0,
@@ -232,8 +233,9 @@ export class SyncDB {
 
 	getAllPaths(): Set<string> {
 		const results = this.sqlDb.exec('SELECT path FROM files')
-		if (results.length === 0) return new Set()
-		return new Set(results[0].values.map((row) => row[0] as string))
+		const result = results[0]
+		if (!result) return new Set()
+		return new Set(result.values.map((row: unknown[]) => row[0] as string))
 	}
 
 	upsertFile(file: DBFile): void {
@@ -316,9 +318,10 @@ export class SyncDB {
 		const results = this.sqlDb.exec(
 			'SELECT device_id, device_name, platform, last_online_at, first_seen_at FROM devices',
 		)
-		if (results.length === 0) return []
-		const { columns, values } = results[0]
-		return values.map((row) => ({
+		const result = results[0]
+		if (!result) return []
+		const { columns, values } = result
+		return values.map((row: unknown[]) => ({
 			deviceId: row[columns.indexOf('device_id')] as string,
 			deviceName: row[columns.indexOf('device_name')] as string,
 			platform: row[columns.indexOf('platform')] as string,
@@ -443,8 +446,9 @@ export class SyncDB {
 	private static migrateIfNeeded(db: SqlJsDatabase): void {
 		// Check if files table has new columns
 		const cols = db.exec('PRAGMA table_info(files)')
-		if (cols.length > 0) {
-			const columnNames = cols[0].values.map((r) => r[1] as string)
+		const colResult = cols[0]
+		if (colResult) {
+			const columnNames = colResult.values.map((r) => r[1] as string)
 			if (!columnNames.includes('first_seen_at')) {
 				db.run('ALTER TABLE files ADD COLUMN first_seen_at INTEGER DEFAULT 0')
 			}
@@ -462,7 +466,8 @@ export class SyncDB {
 		const deviceTable = db.exec(
 			"SELECT name FROM sqlite_master WHERE type='table' AND name='devices'",
 		)
-		if (deviceTable.length === 0 || deviceTable[0].values.length === 0) {
+		const deviceResult = deviceTable[0]
+		if (!deviceResult || deviceResult.values.length === 0) {
 			db.run(`
 				CREATE TABLE IF NOT EXISTS devices (
 					device_id TEXT PRIMARY KEY,
@@ -478,7 +483,8 @@ export class SyncDB {
 		const sessionsTable = db.exec(
 			"SELECT name FROM sqlite_master WHERE type='table' AND name='sync_sessions'",
 		)
-		if (sessionsTable.length === 0 || sessionsTable[0].values.length === 0) {
+		const sessionsResult = sessionsTable[0]
+		if (!sessionsResult || sessionsResult.values.length === 0) {
 			db.run(`
 				CREATE TABLE IF NOT EXISTS sync_sessions (
 					session_id TEXT PRIMARY KEY,

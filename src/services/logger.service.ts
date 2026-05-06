@@ -1,16 +1,18 @@
 import { moment } from 'obsidian'
+import type { LogObject } from 'consola'
 import { IN_DEV } from '~/consts'
 import logger from '~/utils/logger'
 import type NutstorePlugin from '..'
 
-export default class LoggerService {
-	logs: any[] = []
+export class LoggerService {
+	logs: unknown[][] = []
 
-	constructor(private plugin: NutstorePlugin) {
+	constructor(_plugin: NutstorePlugin) {
 		if (IN_DEV) {
 			logger.addReporter({
-				log: (logObj) => {
+				log: (logObj: LogObject) => {
 					const log = [
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
 						(moment as any)(logObj.date).format('YYYY-MM-DD HH:mm:ss'),
 						logObj.type,
 						logObj.args,
@@ -21,8 +23,8 @@ export default class LoggerService {
 		} else {
 			logger.setReporters([
 				{
-					log: (logObj) => {
-						this.logs.push(logObj)
+					log: (logObj: LogObject) => {
+						this.logs.push([logObj as unknown])
 					},
 				},
 			])

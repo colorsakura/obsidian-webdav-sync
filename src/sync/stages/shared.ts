@@ -9,7 +9,7 @@ import breakableSleep from '~/utils/breakable-sleep'
  */
 export async function handle503Error(
 	waitMs: number,
-	isCancelled: () => boolean,
+	_isCancelled: () => boolean,
 ) {
 	const now = Date.now()
 	const startAt = now + waitMs

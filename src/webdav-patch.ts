@@ -70,8 +70,8 @@ if (VALID_REQURL) {
 		const rspHeaders = objKeyToLower({ ...r.headers })
 		for (const key in rspHeaders) {
 			if (rspHeaders.hasOwnProperty(key)) {
-				if (!onlyAscii(rspHeaders[key])) {
-					rspHeaders[key] = encodeURIComponent(rspHeaders[key])
+				if (!onlyAscii(rspHeaders[key]!)) {
+					rspHeaders[key] = encodeURIComponent(rspHeaders[key]!)
 				}
 			}
 		}

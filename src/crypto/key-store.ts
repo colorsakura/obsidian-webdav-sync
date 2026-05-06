@@ -10,11 +10,7 @@
 
 import type { App } from 'obsidian'
 import { fromUint8Array, toUint8Array } from 'js-base64'
-import {
-	deriveKey,
-	getPBKDF2Iterations,
-	DEFAULT_ITERATIONS,
-} from './key-derivation'
+import { deriveKey, getPBKDF2Iterations } from './key-derivation'
 import type { EncryptionSettings } from './types'
 
 /** SecretStorage 中存储密钥的 ID */

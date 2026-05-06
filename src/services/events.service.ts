@@ -11,10 +11,10 @@ import i18n from '~/i18n'
 import { is503Error } from '~/utils/is-503-error'
 import type NutstorePlugin from '..'
 
-export default class EventsService {
+export class EventsService {
 	subscriptions: Subscription[]
 
-	constructor(private plugin: NutstorePlugin) {
+	constructor(plugin: NutstorePlugin) {
 		this.subscriptions = [
 			onPreparingSync().subscribe(({ showNotice }) => {
 				plugin.toggleSyncUI(true)
