@@ -1,4 +1,4 @@
-import { Platform, Vault } from 'obsidian'
+import { Vault } from 'obsidian'
 import { Subscription } from 'rxjs'
 import { WebDAVClient } from 'webdav'
 import {
@@ -119,10 +119,4 @@ export class NutstoreSync {
 		return this.plugin.settings.webdavEndpoint
 	}
 
-	private get platformLabel(): string {
-		if (Platform.isIosApp) return 'ios'
-		if (Platform.isAndroidApp) return 'android'
-		if (Platform.isDesktopApp) return 'desktop'
-		return 'unknown'
-	}
 }
