@@ -646,4 +646,189 @@ describe('twoWayDecider (DB-based)', () => {
 			}),
 		).rejects.toThrow('type conflict')
 	})
+
+	// Directory three-way comparison tests
+	it('本地删除目录 + 远端未改 → RemoveRemote', async () => {
+		const localDB = await SyncDB.empty('device-1')
+		const remoteDB = await SyncDB.empty('device-2')
+		remoteDB.upsertFile({
+			path: 'del-dir',
+			mtime: 1000,
+			size: 0,
+			hash: '',
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
+		})
+		const lastSyncDB = await SyncDB.empty('device-1')
+		lastSyncDB.upsertFile({
+			path: 'del-dir',
+			mtime: 1000,
+			size: 0,
+			hash: '',
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
+		})
+
+		const factory = createMockTaskFactory()
+		await twoWayDecider({
+			settings: defaultSettings,
+			localDB,
+			remoteDB,
+			lastSyncDB,
+			remoteBaseDir: '/remote',
+			taskFactory: factory,
+		})
+
+		expect(factory.createRemoveRemoteTask).toHaveBeenCalledWith(
+			expect.objectContaining({ localPath: 'del-dir' }),
+		)
+	})
+
+	it('本地删除目录 + 远端已改 → Pull', async () => {
+		const localDB = await SyncDB.empty('device-1')
+		const remoteDB = await SyncDB.empty('device-2')
+		remoteDB.upsertFile({
+			path: 'del-dir',
+			mtime: 2000, // changed
+			size: 0,
+			hash: '',
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
+		})
+		const lastSyncDB = await SyncDB.empty('device-1')
+		lastSyncDB.upsertFile({
+			path: 'del-dir',
+			mtime: 1000,
+			size: 0,
+			hash: '',
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
+		})
+
+		const factory = createMockTaskFactory()
+		await twoWayDecider({
+			settings: defaultSettings,
+			localDB,
+			remoteDB,
+			lastSyncDB,
+			remoteBaseDir: '/remote',
+			taskFactory: factory,
+		})
+
+		expect(factory.createPullTask).toHaveBeenCalledWith(
+			expect.objectContaining({ localPath: 'del-dir' }),
+		)
+		expect(factory.createRemoveRemoteTask).not.toHaveBeenCalled()
+	})
+
+	it('远端删除目录 + 本地未改 → RemoveLocal', async () => {
+		const localDB = await SyncDB.empty('device-1')
+		localDB.upsertFile({
+			path: 'remote-deleted-dir',
+			mtime: 1000,
+			size: 0,
+			hash: '',
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
+		})
+		const remoteDB = await SyncDB.empty('device-2')
+		const lastSyncDB = await SyncDB.empty('device-1')
+		lastSyncDB.upsertFile({
+			path: 'remote-deleted-dir',
+			mtime: 1000,
+			size: 0,
+			hash: '',
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
+		})
+
+		const factory = createMockTaskFactory()
+		await twoWayDecider({
+			settings: defaultSettings,
+			localDB,
+			remoteDB,
+			lastSyncDB,
+			remoteBaseDir: '/remote',
+			taskFactory: factory,
+		})
+
+		expect(factory.createRemoveLocalTask).toHaveBeenCalledWith(
+			expect.objectContaining({ localPath: 'remote-deleted-dir' }),
+		)
+	})
+
+	it('双方都删除的目录不生成任务 (自然清理)', async () => {
+		const localDB = await SyncDB.empty('device-1')
+		const remoteDB = await SyncDB.empty('device-2')
+		const lastSyncDB = await SyncDB.empty('device-1')
+		lastSyncDB.upsertFile({
+			path: 'both-deleted-dir',
+			mtime: 1000,
+			size: 0,
+			hash: '',
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
+		})
+
+		const factory = createMockTaskFactory()
+		await twoWayDecider({
+			settings: defaultSettings,
+			localDB,
+			remoteDB,
+			lastSyncDB,
+			remoteBaseDir: '/remote',
+			taskFactory: factory,
+		})
+
+		expect(factory.createMkdirLocalTask).not.toHaveBeenCalled()
+		expect(factory.createMkdirRemoteTask).not.toHaveBeenCalled()
+		expect(factory.createRemoveLocalTask).not.toHaveBeenCalled()
+		expect(factory.createRemoveRemoteTask).not.toHaveBeenCalled()
+	})
+
+	it('远端新建目录 + 无历史记录 → MkdirLocal', async () => {
+		const localDB = await SyncDB.empty('device-1')
+		const remoteDB = await SyncDB.empty('device-2')
+		remoteDB.upsertFile({
+			path: 'remote-new-dir',
+			mtime: 1000,
+			size: 0,
+			hash: '',
+			isDir: 1,
+			firstSeenAt: 0,
+			contentChangedAt: 0,
+			lastSyncedAt: 0,
+		})
+		const lastSyncDB = await SyncDB.empty('device-1')
+
+		// No lastSync record (new directory)
+
+		const factory = createMockTaskFactory()
+		await twoWayDecider({
+			settings: defaultSettings,
+			localDB,
+			remoteDB,
+			lastSyncDB,
+			remoteBaseDir: '/remote',
+			taskFactory: factory,
+		})
+
+		expect(factory.createMkdirLocalTask).toHaveBeenCalledWith(
+			expect.objectContaining({ localPath: 'remote-new-dir' }),
+		)
+	})
 })

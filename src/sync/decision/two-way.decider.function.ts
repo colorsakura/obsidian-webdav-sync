@@ -387,24 +387,62 @@ export async function twoWayDecider(
 	for (const p of dirPaths) {
 		const local = localFiles.get(p)
 		const remote = remoteFiles.get(p)
+		const last = lastSyncFiles.get(p)
 
-		if (local && remote) {
-			logger.debug(`Noop dir — "${p}"`)
-			tasks.push(taskFactory.createNoopTask(opts(p)))
-		} else if (local && !remote) {
-			// C3: Check invalid chars for mkdir-remote
-			if (hasInvalidChar(p)) {
-				logger.debug(`Filename error dir — "${p}"`)
-				tasks.push(taskFactory.createFilenameErrorTask(opts(p)))
-			} else {
-				logger.debug(`Mkdir remote — "${p}"`)
-				tasks.push(taskFactory.createMkdirRemoteTask(opts(p)))
+		if (last) {
+			// Has history → three-way comparison
+			// For directories, use mtime to detect changes (directories don't have content hash)
+			const localChanged = local ? local.mtime !== last.mtime : true
+			const remoteChanged = remote ? remote.mtime !== last.mtime : true
+
+			if (local && remote) {
+				logger.debug(`Noop dir — "${p}"`)
+				tasks.push(taskFactory.createNoopTask(opts(p)))
+			} else if (local && !remote) {
+				// Remote was deleted
+				if (!localChanged) {
+					// Local unchanged → propagate remote deletion
+					logger.debug(`Remove local dir — "${p}" (remote deleted)`)
+					tasks.push(taskFactory.createRemoveLocalTask(opts(p)))
+				} else {
+					// Local changed → push new directory
+					logger.debug(`Push dir — "${p}" (local modified, remote deleted)`)
+					tasks.push(taskFactory.createPushTask(opts(p)))
+				}
+			} else if (!local && remote) {
+				// Local was deleted
+				if (!remoteChanged) {
+					// Remote unchanged → propagate local deletion
+					logger.debug(`Remove remote dir — "${p}" (local deleted)`)
+					tasks.push(taskFactory.createRemoveRemoteTask(opts(p)))
+				} else {
+					// Remote changed → pull new directory
+					logger.debug(`Pull dir — "${p}" (remote modified, local deleted)`)
+					tasks.push(
+						taskFactory.createPullTask({ ...opts(p), remoteSize: remote.size }),
+					)
+				}
 			}
-		} else if (!local && remote) {
-			logger.debug(`Mkdir local — "${p}"`)
-			tasks.push(taskFactory.createMkdirLocalTask(opts(p)))
+			// !local && !remote: both deleted → natural cleanup (not in new DB)
+		} else {
+			// No history → two-way comparison
+			if (local && remote) {
+				logger.debug(`Noop dir — "${p}" (no history)`)
+				tasks.push(taskFactory.createNoopTask(opts(p)))
+			} else if (local && !remote) {
+				// C3: Check invalid chars for mkdir-remote
+				if (hasInvalidChar(p)) {
+					logger.debug(`Filename error dir — "${p}"`)
+					tasks.push(taskFactory.createFilenameErrorTask(opts(p)))
+				} else {
+					logger.debug(`Mkdir remote — "${p}" (new dir, no history)`)
+					tasks.push(taskFactory.createMkdirRemoteTask(opts(p)))
+				}
+			} else if (!local && remote) {
+				logger.debug(`Mkdir local — "${p}" (new dir, no history)`)
+				tasks.push(taskFactory.createMkdirLocalTask(opts(p)))
+			}
 		}
-		// If neither exists (in last but not in either), it naturally disappears
 	}
 
 	// I2: Sort tasks — remove (deepest first), then mkdir (shallowest first), then file tasks
