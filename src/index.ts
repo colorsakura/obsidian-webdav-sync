@@ -1,5 +1,4 @@
 import 'blob-polyfill'
-import 'core-js/stable'
 
 import './polyfill'
 import './webdav-patch'
